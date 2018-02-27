@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView android:layout_width="match_parent" android:layout_height="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.example.lemoncream.myapplication.Activity.NewCoinActivity"
+    tools:showIn="@layout/activity_new_coin" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:isScrollContainer="true"
+        android:orientation="vertical">
+
+        <RadioGroup
+            android:id="@+id/new_coin_radio_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/new_coin_radio_buy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/radio_button_background"
+                android:button="@null"
+                android:checked="true"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="BUY"
+                android:textColor="@drawable/radio_button_text_color" />
+
+            <RadioButton
+                android:id="@+id/new_coin_radio_sell"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/radio_button_background"
+                android:button="@null"
+                android:checked="false"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="SELL"
+                android:textColor="@drawable/radio_button_text_color" />
+
+            <RadioButton
+                android:id="@+id/new_coin_radio_watch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/radio_button_background"
+                android:button="@null"
+                android:checked="false"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="WATCH"
+                android:textColor="@drawable/radio_button_text_color" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/new_coin_dummy_text_necessary_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="Necessary details"
+            android:textSize="12dp"
+            android:textStyle="bold"/>
+        <!--TODO change text later -->
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/new_coin_main_card_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/new_coin_dummy_text_necessary_details">
+
+            <android.support.constraint.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/new_coin_main_linearLayout_1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    app:layout_constraintEnd_toStartOf="@+id/new_coin_more_exchange_icon_image"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="EXCHANGE"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/new_coin_exchange_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-"
+                        android:textSize="18sp" />
+                    <!-- TODO Change the text above to '-' later -->
+
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/new_coin_more_exchange_icon_image"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_keyboard_arrow_right"
+                    app:layout_constraintBottom_toBottomOf="@+id/new_coin_main_linearLayout_1"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/new_coin_main_linearLayout_1" />
+
+                <View
+                    android:id="@+id/new_coin_main_dummy_liner_1"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:background="@color/color_dummy_liner"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/new_coin_main_linearLayout_1" />
+
+
+                <LinearLayout
+                    android:id="@+id/new_coin_main_linearLayout_2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    app:layout_constraintEnd_toStartOf="@+id/new_coin_main_linearLayout_2_2"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/new_coin_main_dummy_liner_1">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TRADE PRICE"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/new_coin_trade_price_edit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        android:focusedByDefault="false"
+                        android:hint="0"
+                        android:inputType="numberDecimal"
+                        android:textColor="@android:color/primary_text_light"
+                        android:textSize="18sp" />
+                    <!-- TODO Change the hint above to '-' later -->
+
+                </LinearLayout>
+
+                <View
+                    android:id="@+id/new_coin_main_dummy_liner_2_2"
+                    android:layout_width="1dp"
+                    android:layout_height="0dp"
+                    android:background="@color/color_dummy_liner"
+                    app:layout_constraintBottom_toBottomOf="@id/new_coin_main_dummy_liner_2"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.6"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/new_coin_main_dummy_liner_1" />
+
+
+                <LinearLayout
+                    android:id="@+id/new_coin_main_linearLayout_2_2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="@id/new_coin_main_dummy_liner_2_2"
+                    app:layout_constraintTop_toBottomOf="@id/new_coin_main_dummy_liner_1"
+                    tools:layout_editor_absoluteY="57dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CURRENT PRICE"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/new_coin_current_price_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        android:text="-"
+                        android:textSize="18sp" />
+                    <!-- TODO Change the hint above to '-' later -->
+
+                </LinearLayout>
+
+                <View
+                    android:id="@+id/new_coin_main_dummy_liner_2"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:background="@color/color_dummy_liner"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/new_coin_main_linearLayout_2" />
+
+                <LinearLayout
+                    android:id="@+id/new_coin_main_linearLayout_3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/new_coin_main_dummy_liner_2">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="AMOUNT"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/new_coin_amount_edit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        android:focusedByDefault="false"
+                        android:hint="0"
+                        android:inputType="numberDecimal"
+                        android:textColor="@android:color/primary_text_light"
+                        android:textSize="18sp" />
+                    <!-- TODO Change the hint above to '-' later -->
+
+                </LinearLayout>
+
+                <View
+                    android:id="@+id/new_coin_main_dummy_liner_3"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:background="@color/color_dummy_liner"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/new_coin_main_linearLayout_3" />
+
+                <LinearLayout
+                    android:id="@+id/new_coin_main_linearLayout_4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/new_coin_main_dummy_liner_3">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TOTAL VALUE"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/new_coin_total_value_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="18sp" />
+                    <!-- TODO Change the text above to '-' later -->
+
+                </LinearLayout>
+
+                <View
+                    android:id="@+id/new_coin_main_dummy_liner_4"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:background="@color/color_dummy_liner"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/new_coin_main_linearLayout_4" />
+
+                <LinearLayout
+                    android:id="@+id/new_coin_main_linearLayout_5"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/new_coin_main_dummy_liner_4">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DATE"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/new_coin_date_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-"
+                        android:textSize="18sp" />
+                    <!-- TODO Change the text above to '-' later -->
+
+                </LinearLayout>
+
+
+            </android.support.constraint.ConstraintLayout>
+
+        </android.support.v7.widget.CardView>
+
+        <TextView
+            android:id="@+id/new_coin_dummy_text_additional_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="16dp"
+            android:text="Additional Details"
+            android:textSize="12dp"
+            android:textStyle="bold"/>
+        <!--TODO change text later -->
+
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/new_coin_misc_card_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/new_coin_dummy_text_additional_details"
+            tools:layout_editor_absoluteY="59dp">
+
+            <android.support.constraint.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/new_coin_misc_linearLayout_1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    app:layout_constraintEnd_toStartOf="@+id/new_coin_deduct_switch"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DEDUCT FROM"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/new_coin_deduct_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-"
+                        android:textSize="18sp" />
+                    <!-- TODO Change the text above to '-' later -->
+
+                </LinearLayout>
+
+                <Switch
+                    android:id="@+id/new_coin_deduct_switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    android:padding="8dp"
+                    app:layout_constraintBottom_toBottomOf="@+id/new_coin_misc_linearLayout_1"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/new_coin_misc_linearLayout_1" />
+
+                <View
+                    android:id="@+id/new_coin_misc_dummy_liner_1"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:background="@color/color_dummy_liner"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/new_coin_misc_linearLayout_1" />
+
+                <LinearLayout
+                    android:id="@+id/new_coin_misc_linearLayout_2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/new_coin_misc_dummy_liner_1">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="NOTE"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/new_coin_note_preview_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Click here to add a note"
+                        android:textColor="@android:color/primary_text_light" />
+                    <!-- TODO Change the hint above to '-' later -->
+
+                </LinearLayout>
+
+            </android.support.constraint.ConstraintLayout>
+
+        </android.support.v7.widget.CardView>
+
+
+        <TextView
+            android:id="@+id/new_coin_dummy_blank_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:text=" "/>
+
+    </LinearLayout>
+
+
+
+
+</ScrollView>

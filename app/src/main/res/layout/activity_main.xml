@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.example.lemoncream.myapplication.Activity.MainActivity">
+
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/app_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.design.widget.CollapsingToolbarLayout
+            android:id="@+id/toolbar_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            app:contentScrim="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed"
+            app:expandedTitleTextAppearance="@style/ExpandedAppBar"
+            app:toolbarId="@+id/toolbar"
+            app:titleEnabled="false">
+
+            <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/main_line_chart"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            app:layout_collapseMode="parallax"
+            android:fitsSystemWindows="true"
+            android:layout_gravity="bottom"
+            android:background="@drawable/chart_background"/>
+
+            <!--<View-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="match_parent"-->
+                <!--android:background="@drawable/drawable_gradient"/>-->
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="center"
+                android:padding="16dp"
+                app:layout_collapseMode="parallax"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Portfolio Value"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/white"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="$30,000,000"
+                    android:textSize="36sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="28.00%"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/white"/>
+
+            </LinearLayout>
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                app:titleTextColor="@color/colorTextDarkTheme"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:layout_collapseMode="pin"
+                android:layout_marginBottom="48dp"
+                android:layout_gravity="top"
+                app:popupTheme="@style/AppTheme.PopupOverlay">
+
+                <Spinner
+                    android:id="@+id/portfolio_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:overlapAnchor="false"
+                    android:popupBackground="@color/colorPrimaryBackroundLight"/>
+
+            </android.support.v7.widget.Toolbar>
+
+            <android.support.design.widget.TabLayout
+                android:id="@+id/main_tab_layout"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:tabIndicatorColor="@android:color/white"
+                android:layout_gravity="bottom"
+                app:tabSelectedTextColor="@android:color/white"
+                app:tabTextColor="@color/tab_unselected"/>
+
+
+        </android.support.design.widget.CollapsingToolbarLayout>
+    </android.support.design.widget.AppBarLayout>
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/main_view_pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/fab_margin"
+        app:layout_anchor="@id/app_bar"
+        app:layout_anchorGravity="bottom|end"
+        app:srcCompat="@android:drawable/ic_dialog_email"
+        android:visibility="gone"/>
+
+</android.support.design.widget.CoordinatorLayout>

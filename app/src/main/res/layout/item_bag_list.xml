@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp"
+    android:weightSum="7">
+
+    <ImageView
+        android:id="@+id/item_bag_coin_logo"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_margin="8dp"
+        android:layout_weight="1"/>
+
+    <TextView
+        android:id="@+id/item_bag_coin_pair_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="bitcoin"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:layout_gravity="center_vertical"
+        android:layout_margin="8dp"
+        android:layout_weight="2"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_margin="8dp"
+        android:layout_gravity="center_vertical"
+        android:gravity="end"
+        android:layout_weight="2">
+
+        <TextView
+            android:id="@+id/item_bag_holdings_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:singleLine="true"/>
+
+        <TextView
+            android:id="@+id/item_bag_holdings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:singleLine="true"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_margin="8dp"
+        android:layout_gravity="center_vertical"
+        android:gravity="end"
+        android:layout_weight="2">
+
+        <TextView
+            android:id="@+id/item_bag_price"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:singleLine="true"/>
+
+        <TextView
+            android:id="@+id/item_bag_price_change"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:singleLine="true"/>
+
+    </LinearLayout>
+
+</LinearLayout>

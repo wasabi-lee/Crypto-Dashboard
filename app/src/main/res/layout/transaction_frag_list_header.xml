@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/color_header_background"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:id="@+id/tx_frag_header_linearlayout_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tx_frag_header_dummy_profit_loss_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PROFIT/LOSS"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/tx_frag_header_profit_loss_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$ 23,432,12.02"
+            android:textSize="18dp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tx_frag_header_total_holdings_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="27.3465 ETH" />
+    </LinearLayout>
+    <!-- TODO Change text -->
+
+    <ImageView
+        android:id="@+id/tx_frag_header_info_image_view"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_action_info"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/tx_frag_header_linearlayout_2_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toStartOf="@id/tx_frag_header_dummy_liner"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tx_frag_header_linearlayout_1">
+
+        <TextView
+            android:id="@+id/tx_frag_header_dummy_net_cost_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NET COST"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tx_frag_header_net_cost_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$ 212.02"
+            android:textStyle="bold"/>
+    </LinearLayout>
+        <!-- TODO Change text -->
+
+    <View
+        android:id="@+id/tx_frag_header_dummy_liner"
+        android:layout_width="0.5dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:background="@color/color_dummy_liner"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tx_frag_header_linearlayout_1" />
+
+    <LinearLayout
+        android:id="@+id/tx_frag_header_linearlayout_2_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tx_frag_header_dummy_liner"
+        app:layout_constraintTop_toBottomOf="@id/tx_frag_header_linearlayout_1">
+
+        <TextView
+            android:id="@+id/tx_frag_header_dummy_market_value_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MARKET VALUE"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tx_frag_header_market_value_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$ 23,432,12.02"
+            android:textStyle="bold"/>
+    </LinearLayout>
+    <!-- TODO Change text -->
+
+
+</android.support.constraint.ConstraintLayout>

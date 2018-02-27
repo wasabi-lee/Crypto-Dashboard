@@ -1,0 +1,205 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.lemoncream.myapplication.Fragment.ChartFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <android.support.constraint.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/chart_header_exchange_pair_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Poloniex - ETH/USD" />
+
+            <TextView
+                android:id="@+id/chart_current_price_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$2,346.34"
+                android:textSize="36sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/chart_header_exchange_pair_text" />
+
+            <TextView
+                android:id="@+id/chart_change_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:text="(28.24%)"
+                app:layout_constraintBottom_toBottomOf="@+id/chart_current_price_text"
+                app:layout_constraintStart_toEndOf="@+id/chart_current_price_text"
+                app:layout_constraintTop_toTopOf="@+id/chart_current_price_text" />
+
+            <com.github.mikephil.charting.charts.CandleStickChart
+                android:id="@+id/chart_candlestick_chart"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/chart_current_price_text" />
+
+            <LinearLayout
+                android:id="@+id/chart_timeframe_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/chart_candlestick_chart">
+
+                <TextView
+                    android:id="@+id/chart_timeframe_text_one_day"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="1D" />
+
+                <TextView
+                    android:id="@+id/chart_timeframe_text_three_day"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="3D" />
+
+                <TextView
+                    android:id="@+id/chart_timeframe_text_one_week"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="1W" />
+
+                <TextView
+                    android:id="@+id/chart_timeframe_text_one_month"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="1M" />
+
+                <TextView
+                    android:id="@+id/chart_timeframe_text_three_months"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="3M" />
+
+                <TextView
+                    android:id="@+id/chart_timeframe_text_six_months"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="6M" />
+
+                <TextView
+                    android:id="@+id/chart_timeframe_text_one_year"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="1Y" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/chart_data_linearlayout_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_container"
+                android:layout_marginLeft="8dp">
+
+                <TextView
+                    android:id="@+id/chart_dummy_high_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="HIGH"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/chart_high_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2,434.33" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/chart_data_linearlayout_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintEnd_toStartOf="@+id/chart_data_linearlayout_3"
+                app:layout_constraintStart_toEndOf="@+id/chart_data_linearlayout_1"
+                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_container">
+
+                <TextView
+                    android:id="@+id/chart_dummy_low_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LOW"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/chart_low_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1235.33" />
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:id="@+id/chart_data_linearlayout_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_container"
+                android:layout_marginRight="8dp">
+
+
+                <TextView
+                    android:id="@+id/chart_dummy_volume_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="VOLUME"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/chart_volume_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="436,342,32.33" />
+            </LinearLayout>
+
+
+        </android.support.constraint.ConstraintLayout>
+    </ScrollView>
+</FrameLayout>

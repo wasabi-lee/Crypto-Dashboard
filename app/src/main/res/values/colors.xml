@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimaryBackroundDark">@android:color/background_dark</color>
+    <color name="colorPrimaryBackroundLight">#e4e4e4</color>
+    <color name="colorTextDarkTheme">#ffffff</color>
+
+    <color name="colorPrimary">#13cfd7</color>
+    <color name="colorPrimaryDark">#00d6d7</color>
+    <color name="colorAccent">#41b4cb</color>
+    <color name="tab_unselected">#dcdcdc</color>
+
+    <color name="color_dummy_liner">#bcbcbc</color>
+    <color name="color_header_background">#eaeaea</color>
+
+    <color name="color_change_positive">#00e28c</color>
+    <color name="color_change_negative">#ff474d</color>
+</resources>
