@@ -18,8 +18,10 @@ import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import com.example.lemoncream.myapplication.Model.GsonModels.Price;
-import com.example.lemoncream.myapplication.Model.Deserializers.PriceDeserializer;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceCurrentDeserializer;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceHistoricalDeserializer;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceCurrent;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceHistorical;
 import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
 import com.example.lemoncream.myapplication.Model.RealmModels.Exchange;
 import com.example.lemoncream.myapplication.Model.RealmModels.Pair;
@@ -29,6 +31,7 @@ import com.example.lemoncream.myapplication.Network.PriceService;
 import com.example.lemoncream.myapplication.Network.RetrofitHelper;
 import com.example.lemoncream.myapplication.R;
 import com.example.lemoncream.myapplication.Utils.Database.RealmIdAutoIncrementHelper;
+import com.example.lemoncream.myapplication.Utils.Formatters.NumberFormatter;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -202,24 +205,15 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
         mDateText.setText(formattedDate);
     }
 
-    private static float convertUserInputIntoFloat(String inputString) {
-        float inputFloat;
-        try {
-            inputFloat = Float.valueOf(inputString);
-        } catch (NumberFormatException e) {
-            inputFloat = 0;
-        }
-        return inputFloat >= 0 ? inputFloat : 0;
-    }
 
     private void onUserInputChanged(String firstParam, String secondParam) {
-        float firstParamFloat = convertUserInputIntoFloat(firstParam);
+        float firstParamFloat = NumberFormatter.convertUserInputIntoFloat(firstParam);
         if (firstParamFloat < 0) {
             mTradePriceEdit.setText(0);
             mNewCoinAmountEdit.setText(0);
             mTotalValueText.setText(0);
         } else {
-            float SecondParamFloat = convertUserInputIntoFloat(secondParam);
+            float SecondParamFloat = NumberFormatter.convertUserInputIntoFloat(secondParam);
             mTotalValueText.setText(String.valueOf(mDecimalFormat.format(SecondParamFloat * firstParamFloat)));
         }
     }
@@ -227,24 +221,24 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
     private void requestCurrentPrice() {
         Retrofit retrofit = RetrofitHelper
                 .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
-                        GsonHelper.createGsonBuilder(Price.class, new PriceDeserializer()).create());
+                        GsonHelper.createGsonBuilder(PriceCurrent.class, new PriceCurrentDeserializer()).create());
         PriceService coinListService = retrofit.create(PriceService.class);
-        Observable<Price> priceRequest = coinListService.getCurrentPrice(mCurrentPair.getfCoin().getSymbol(),
+        Observable<PriceCurrent> priceRequest = coinListService.getCurrentPrice(mCurrentPair.getfCoin().getSymbol(),
                 mCurrentPair.gettCoin().getSymbol(),
                 mCurrentExchange.getName());
 
         priceRequest.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Price>() {
+                .subscribe(new Observer<PriceCurrent>() {
                     @Override
                     public void onSubscribe(Disposable d) {
                         Log.d(TAG, "onSubscribe: ");
                     }
 
                     @Override
-                    public void onNext(Price price) {
+                    public void onNext(PriceCurrent priceCurrent) {
                         Log.d(TAG, "onNext: ");
-                        parsePriceData(price);
+                        parsePriceData(priceCurrent);
                     }
 
                     @Override
@@ -261,11 +255,11 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
                 });
     }
 
-    private void parsePriceData(Price priceData) {
+    private void parsePriceData(PriceCurrent priceCurrentData) {
         //TODO Handle null error
-        if (priceData != null) {
+        if (priceCurrentData != null) {
             String currentTsym = mCurrentPair.gettCoin().getSymbol();
-            Float currentPrice = priceData.getPrices().get(currentTsym);
+            Float currentPrice = priceCurrentData.getPrices().get(currentTsym);
             mCurrentPriceText.setText(String.valueOf(mDecimalFormat.format(currentPrice)));
             mTradePriceEdit.setHint(String.valueOf(mDecimalFormat.format(currentPrice)));
         }
@@ -307,7 +301,7 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
         // This is for formatting the user input when the EditText loses focus (i.e. .3353 -> 0.3353)
         if (!hasFocus) {
             EditText v = (EditText) view;
-            float inputFloat = convertUserInputIntoFloat(v.getText().toString());
+            float inputFloat = NumberFormatter.convertUserInputIntoFloat(v.getText().toString());
             v.setText(mDecimalFormat.format(inputFloat));
         }
     }
@@ -356,8 +350,8 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
         txHistory.set_id(RealmIdAutoIncrementHelper.generateItemId(TxHistory.class, "_id"));
         txHistory.setOrderType(getOrderType());
         txHistory.setTxHolder(findBagForThisTx()); // TODO FIX HERE LATER
-        txHistory.setAmount(convertUserInputIntoFloat(mNewCoinAmountEdit.getText().toString()));
-        txHistory.setTradePrice(convertUserInputIntoFloat(mTradePriceEdit.getText().toString()));
+        txHistory.setAmount(NumberFormatter.convertUserInputIntoFloat(mNewCoinAmountEdit.getText().toString()));
+        txHistory.setTradePrice(NumberFormatter.convertUserInputIntoFloat(mTradePriceEdit.getText().toString()));
         txHistory.setExchange(mCurrentExchange);
         txHistory.setDate(mSelectedDate);
         txHistory.setDeductFromAnotherBag(mDeductSwitch.isChecked());
@@ -370,22 +364,39 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
                 .equalTo("tradePair.pairName", mCurrentPair.getPairName())
                 .findFirst(); // TODO Fix here so that it can query portfolio
         if (foundBag == null) {
-            foundBag = new Bag();
-            foundBag.set_id(RealmIdAutoIncrementHelper.generateItemId(Bag.class, "_id"));
-            foundBag.setTradePair(mCurrentPair);
-            foundBag.setBalance(foundBag.getBalance() + convertUserInputIntoFloat(mNewCoinAmountEdit.getText().toString()));
-            foundBag.setDateAdded(mSelectedDate);
-            foundBag.setPortfolio(null); // TODO Null for now
+            Bag newBag = new Bag();
+            newBag.set_id(RealmIdAutoIncrementHelper.generateItemId(Bag.class, "_id"));
+            newBag.setTradePair(mCurrentPair);
+            newBag.setBalance(NumberFormatter.convertUserInputIntoFloat(mNewCoinAmountEdit.getText().toString()));
+            newBag.setDateAdded(mSelectedDate);
+            newBag.setPortfolio(null); // TODO Null for now
+            return newBag;
+        } else {
+            String orderType = getOrderType();
+            float balance = Float.valueOf(mNewCoinAmountEdit.getText().toString());
+
+            if (orderType != null) {
+                mRealm.executeTransaction(realm -> {
+                    float newBalance = 0;
+                    if (orderType.equals(TxHistory.ORDER_TYPE_BUY)) {
+                        newBalance = foundBag.getBalance() + balance;
+                    } else if (orderType.equals(TxHistory.ORDER_TYPE_SELL)) {
+                        newBalance = foundBag.getBalance() - balance;
+                    }
+                    foundBag.setBalance(newBalance);
+                }
+                );
+            }
+            return foundBag;
         }
-        return foundBag;
     }
 
     private String getOrderType() {
         RadioButton selectedRadioBtn = findViewById(mRadioGroupOrderType.getCheckedRadioButtonId());
         String orderType = selectedRadioBtn.getText().toString();
-        if (orderType.equals("BUY")) return "order_buy";
-        if (orderType.equals("SELL")) return "order_buy";
-        if (orderType.equals("WATCH")) return "order_watch";
+        if (orderType.equals("BUY")) return TxHistory.ORDER_TYPE_BUY;
+        if (orderType.equals("SELL")) return TxHistory.ORDER_TYPE_SELL;
+        if (orderType.equals("WATCH")) return TxHistory.ORDER_TYPE_WATCH;
         return null;
     }
 

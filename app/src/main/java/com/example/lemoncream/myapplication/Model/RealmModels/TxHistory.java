@@ -22,6 +22,10 @@ public class TxHistory extends RealmObject {
     private boolean deductFromAnotherBag;
     private Pair decutedPair;
 
+    public static final String ORDER_TYPE_BUY = "order_buy";
+    public static final String ORDER_TYPE_SELL = "order_sell";
+    public static final String ORDER_TYPE_WATCH = "order_watch";
+
     public TxHistory() {
     }
 

@@ -1,5 +1,6 @@
 package com.example.lemoncream.myapplication.Activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
@@ -20,6 +21,7 @@ import butterknife.ButterKnife;
 public class CoinDetailActivity extends AppCompatActivity {
 
     private static final String TAG = CoinDetailActivity.class.getSimpleName();
+    public static final String EXTRA_PAIR_KEY = "extra_pair_key";
 
     @BindView(R.id.coin_detail_toolbar)  Toolbar toolbar;
     @BindView(R.id.coin_detail_tab_layout)  TabLayout mTabLayout;
@@ -37,10 +39,21 @@ public class CoinDetailActivity extends AppCompatActivity {
     }
 
     public void initializeLayout(){
+
+        Bundle bundle = new Bundle();
+        bundle.putInt(EXTRA_PAIR_KEY, getIntent().getIntExtra(EXTRA_PAIR_KEY, -1));
+
+        ChartFragment chartFragment = new ChartFragment();
+        chartFragment.setArguments(bundle);
+        TransactionFragment txFragment = new TransactionFragment();
+        txFragment.setArguments(bundle);
+        AlertFragment alertFragment = new AlertFragment();
+        alertFragment.setArguments(bundle);
+
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new ChartFragment(), "Chart");
-        adapter.addFragment(new AlertFragment(), "Alerts");
-        adapter.addFragment(new TransactionFragment(), "Transactions");
+        adapter.addFragment(chartFragment, "Chart");
+        adapter.addFragment(txFragment, "Transactions");
+        adapter.addFragment(alertFragment, "Alerts");
         mViewPager.setAdapter(adapter);
         mTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override

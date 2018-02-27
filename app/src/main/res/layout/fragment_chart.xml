@@ -18,13 +18,13 @@
                 android:id="@+id/chart_header_exchange_pair_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Poloniex - ETH/USD" />
+                android:text="No data" />
 
             <TextView
                 android:id="@+id/chart_current_price_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$2,346.34"
+                android:text="No data"
                 android:textSize="36sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
@@ -37,12 +37,12 @@
                 android:layout_marginLeft="8dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
-                android:text="(28.24%)"
+                android:text="(- %)"
                 app:layout_constraintBottom_toBottomOf="@+id/chart_current_price_text"
                 app:layout_constraintStart_toEndOf="@+id/chart_current_price_text"
                 app:layout_constraintTop_toTopOf="@+id/chart_current_price_text" />
 
-            <com.github.mikephil.charting.charts.CandleStickChart
+            <com.example.lemoncream.myapplication.CustomViews.CandleChart
                 android:id="@+id/chart_candlestick_chart"
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
@@ -141,7 +141,7 @@
                     android:id="@+id/chart_high_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="2,434.33" />
+                    android:text="No data" />
             </LinearLayout>
 
             <LinearLayout
@@ -168,7 +168,7 @@
                     android:id="@+id/chart_low_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1235.33" />
+                    android:text="No data" />
             </LinearLayout>
 
 
@@ -196,7 +196,7 @@
                     android:id="@+id/chart_volume_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="436,342,32.33" />
+                    android:text="No data" />
             </LinearLayout>
 
 

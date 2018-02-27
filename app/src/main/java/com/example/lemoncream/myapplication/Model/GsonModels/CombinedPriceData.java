@@ -9,14 +9,16 @@ import java.util.HashMap;
 public class CombinedPriceData {
 
     private String fsym;
+    private String tsym;
     private HashMap<String, Float> previousPrices;
     private HashMap<String, Float> currentPrices;
 
     public CombinedPriceData() {
     }
 
-    public CombinedPriceData(String fsym, HashMap<String, Float> previousPrices, HashMap<String, Float> currentPrices) {
+    public CombinedPriceData(String fsym, String tsym, HashMap<String, Float> previousPrices, HashMap<String, Float> currentPrices) {
         this.fsym = fsym;
+        this.tsym = tsym;
         this.previousPrices = previousPrices;
         this.currentPrices = currentPrices;
     }
@@ -27,6 +29,14 @@ public class CombinedPriceData {
 
     public void setFsym(String fsym) {
         this.fsym = fsym;
+    }
+
+    public String getTsym() {
+        return tsym;
+    }
+
+    public void setTsym(String tsym) {
+        this.tsym = tsym;
     }
 
     public HashMap<String, Float> getPreviousPrices() {

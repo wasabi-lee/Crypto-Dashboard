@@ -3,28 +3,18 @@ package com.example.lemoncream.myapplication.Model.GsonModels;
 import java.util.HashMap;
 
 /**
- * Created by LemonCream on 2018-02-19.
+ * Created by LemonCream on 2018-02-27.
  */
 
-public class Price {
+public class PriceCurrent {
 
-    private String fsym;
     private HashMap<String, Float> prices;
 
-    public Price() {
+    public PriceCurrent() {
     }
 
-    public Price(String fsym, HashMap<String, Float> prices) {
-        this.fsym = fsym;
+    public PriceCurrent(String fsym, HashMap<String, Float> prices) {
         this.prices = prices;
-    }
-
-    public String getFsym() {
-        return fsym;
-    }
-
-    public void setFsym(String fsym) {
-        this.fsym = fsym;
     }
 
     public HashMap<String, Float> getPrices() {
@@ -34,4 +24,6 @@ public class Price {
     public void setPrices(HashMap<String, Float> prices) {
         this.prices = prices;
     }
+
+
 }

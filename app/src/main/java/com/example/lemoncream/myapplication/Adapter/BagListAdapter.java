@@ -1,6 +1,8 @@
 package com.example.lemoncream.myapplication.Adapter;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -9,16 +11,16 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.lemoncream.myapplication.Activity.CoinDetailActivity;
+import com.example.lemoncream.myapplication.Fragment.ChartFragment;
+import com.example.lemoncream.myapplication.Model.GsonModels.ChartData;
 import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
 import com.example.lemoncream.myapplication.Model.TempModels.BagPriceData;
 import com.example.lemoncream.myapplication.R;
 import com.squareup.picasso.Picasso;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import io.realm.RealmResults;
 
 /**
  * Created by LemonCream on 2018-02-23.
@@ -27,6 +29,7 @@ import io.realm.RealmResults;
 public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHolder> {
 
     private static final String TAG = BagListAdapter.class.getSimpleName();
+    private static final DecimalFormat df = new DecimalFormat("#.######");
 
     private ArrayList<BagPriceData> data;
     private Context mContext;
@@ -39,7 +42,7 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
         this.mBaseUrl = mContext.getResources().getString(R.string.image_base_url);
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    static class ViewHolder extends RecyclerView.ViewHolder {
 
         View layout;
         ImageView mCoinLogo;
@@ -48,7 +51,6 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
         TextView mHoldingsText;
         TextView mPriceText;
         TextView mPriceChangeText;
-
 
         ViewHolder(View itemView) {
             super(itemView);
@@ -59,11 +61,6 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
             mHoldingsText = layout.findViewById(R.id.item_bag_holdings);
             mPriceText = layout.findViewById(R.id.item_bag_price);
             mPriceChangeText = layout.findViewById(R.id.item_bag_price_change);
-        }
-
-        @Override
-        public void onClick(View view) {
-
         }
     }
 
@@ -76,20 +73,36 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
+
         Bag currentItem = data.get(position).getBag();
         String fSym = currentItem.getTradePair().getfCoin().getSymbol();
         String tSym = currentItem.getTradePair().gettCoin().getSymbol();
         String fSymImageUrl = currentItem.getTradePair().getfCoin().getImageUrl();
-        Log.d(TAG, "onBindViewHolder: " + mBaseUrl + fSymImageUrl);
         String pairName = fSym + "/" + tSym;
+
         float holdings = currentItem.getBalance();
         holder.mPairText.setText(pairName);
-        holder.mHoldingsText.setText(holdings + " " + fSym);
+        holder.mHoldingsText.setText(df.format(holdings) + " " + fSym);
+
+        if (data.get(position).getCurrentPrice() != null && data.get(position).getPreviousPrice() != null) {
+            float previousPrice = data.get(position).getPreviousPrice().get(tSym);
+            float currentPrice = data.get(position).getCurrentPrice().get(tSym);
+            holder.mPriceText.setText(String.valueOf(df.format(currentPrice)));
+            holder.mHoldingsValueText.setText(String.valueOf(df.format(currentPrice * holdings)));
+            holder.mPriceChangeText.setText(String.valueOf(df.format(currentPrice - previousPrice)));
+        }
+
         Picasso.with(mContext)
                 .load(mBaseUrl + fSymImageUrl)
                 .resize(50, 50)
                 .centerCrop()
                 .into(holder.mCoinLogo);
+
+        holder.layout.setOnClickListener(view -> {
+            Intent intent = new Intent(mContext, CoinDetailActivity.class);
+            intent.putExtra(CoinDetailActivity.EXTRA_PAIR_KEY, currentItem.get_id());
+            mContext.startActivity(intent);
+        });
     }
 
     @Override

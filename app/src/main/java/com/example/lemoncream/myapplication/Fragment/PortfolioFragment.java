@@ -16,8 +16,12 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 import com.example.lemoncream.myapplication.Adapter.BagListAdapter;
-import com.example.lemoncream.myapplication.Model.GsonModels.Price;
-import com.example.lemoncream.myapplication.Model.Deserializers.PriceDeserializer;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceCurrentDeserializer;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceHistoricalDeserializer;
+import com.example.lemoncream.myapplication.Model.GsonModels.CombinedPriceData;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceCurrent;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceHistorical;
+import com.example.lemoncream.myapplication.Model.RealmModels.TxHistory;
 import com.example.lemoncream.myapplication.Model.TempModels.BagPriceData;
 import com.example.lemoncream.myapplication.Model.TempModels.PriceParams;
 import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
@@ -26,23 +30,18 @@ import com.example.lemoncream.myapplication.Network.PriceService;
 import com.example.lemoncream.myapplication.Network.RetrofitHelper;
 import com.example.lemoncream.myapplication.R;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -110,7 +109,7 @@ public class PortfolioFragment extends Fragment {
         for (Bag bag : bags) {
             if (bag == null || bag.getTradePair() == null) continue;
             String pairName = bag.getTradePair().getPairName();
-            dataset.put(pairName, new BagPriceData(bag, -1, -1));
+            dataset.put(pairName, new BagPriceData(bag, null, null));
         }
         mDataset = dataset;
         return dataset;
@@ -136,43 +135,59 @@ public class PortfolioFragment extends Fragment {
 
     private void requestPriceData(ArrayList<PriceParams> params) {
         if (params == null) return;
-
+        Retrofit retrofitCurrent = RetrofitHelper
+                .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
+                        GsonHelper.createGsonBuilder(PriceCurrent.class, new PriceCurrentDeserializer()).create());
+        Retrofit retrofitPrev = RetrofitHelper
+                .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
+                        GsonHelper.createGsonBuilder(PriceHistorical.class, new PriceHistoricalDeserializer()).create());
         Observable.fromIterable(params)
-                .flatMap()
-//        Observable.fromIterable(params)
-//                .flatMap(priceParams -> {
-//                    Retrofit retrofit = RetrofitHelper
-//                            .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
-//                                    GsonHelper.createGsonBuilder(Price.class, new PriceDeserializer()).create());
-//                    PriceService coinListService = retrofit.create(PriceService.class);
-//                    Observable<Price> priceRequest = coinListService.getCurrentPrice(priceParams.getFsym(),
-//                            priceParams.getTsym(), priceParams.getExchangeName());
-//                    Observable<Price> priceRequestHistorical = coinListService.getHistoricalPrice(priceParams.getFsym(),
-//                            priceParams.getTsym(), priceParams.getTimestamp(), priceParams.getExchangeName());
-//                    return Observable.fromIterable(Arrays.asList(priceRequest, priceRequestHistorical)).flatMap((Function<Observable<Price>, ObservableSource<?>>) priceObservable -> priceObservable);
-//                }).subscribeOn(Schedulers.io())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(new Observer<Object>() {
-//                    @Override
-//                    public void onSubscribe(Disposable d) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onNext(Object price) {
-//                        Price result = (Price) price;
-//                    }
-//
-//                    @Override
-//                    public void onError(Throwable e) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onComplete() {
-//
-//                    }
-//                });
+                .flatMap(priceParams -> {
+                    PriceService coinListServiceCurrent = retrofitCurrent.create(PriceService.class);
+                    PriceService coinListServicePrev = retrofitPrev.create(PriceService.class);
+                    Observable<PriceCurrent> priceRequest = coinListServiceCurrent
+                            .getCurrentPrice(priceParams.getFsym(), priceParams.getTsym(),
+                                    priceParams.getExchangeName());
+                    Observable<PriceHistorical> priceRequestHistorical = coinListServicePrev
+                            .getHistoricalPrice(priceParams.getFsym(), priceParams.getTsym(),
+                                    priceParams.getTimestamp(), priceParams.getExchangeName());
+
+                    return Observable.zip(priceRequest, priceRequestHistorical,
+                            (BiFunction<PriceCurrent, PriceHistorical, Object>)
+                                    (currentPrice, previousPrice)
+                                            -> new CombinedPriceData(previousPrice.getFsym(), previousPrice.getTsym(),
+                                            previousPrice.getPrices(), currentPrice.getPrices()));
+
+                }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Object>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(Object price) {
+                        if (price != null) {
+                            CombinedPriceData data = (CombinedPriceData) price;
+                            String key = data.getFsym() + "_" + data.getTsym();
+                            Log.d(TAG, "onNext: " + key);
+                            mDataset.get(key).setCurrentPrice(data.getCurrentPrices());
+                            mDataset.get(key).setPreviousPrice(data.getPreviousPrices());
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        mAdapter.setData(new ArrayList<>(mDataset.values()));
+                        mAdapter.notifyDataSetChanged();
+                    }
+                });
     }
 
     private ArrayList<PriceParams> createPriceApiCallParams() {
@@ -181,9 +196,12 @@ public class PortfolioFragment extends Fragment {
         for (BagPriceData data : mDataset.values()) {
             if (data == null) continue;
             String fsym = data.getBag().getTradePair().getfCoin().getSymbol();
-            String tsyms = data.getBag().getTradePair().gettCoin().getSymbol() + ",USD"; //TODO Fix this to Base currency later
+            String tsyms = data.getBag().getTradePair().gettCoin().getSymbol(); //TODO Fix this to Base currency later
             long ts = calendar.getTimeInMillis() - (1000 * 60 * 60 * 24);
-            String exchange = data.getBag().getTradePair().getExchanges().get(0).getName(); // TODO Set primary exchange setting
+            String exchange = mRealm.where(TxHistory.class)
+                    .equalTo("txHolder.tradePair.pairName", data.getBag().getTradePair().getPairName())
+                    .findAllSorted("date")
+                    .last().getExchange().getName(); // Getting the latest exchange that has been added
             params.add(new PriceParams(fsym, tsyms, ts, exchange));
         }
         return params;
