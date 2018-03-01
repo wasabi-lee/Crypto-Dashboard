@@ -28,39 +28,39 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/radio_button_background"
+                android:background="@drawable/radio_default_background"
                 android:button="@null"
                 android:checked="true"
                 android:gravity="center"
                 android:padding="8dp"
                 android:text="BUY"
-                android:textColor="@drawable/radio_button_text_color" />
+                android:textColor="@drawable/radio_default_text_color" />
 
             <RadioButton
                 android:id="@+id/new_coin_radio_sell"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/radio_button_background"
+                android:background="@drawable/radio_default_background"
                 android:button="@null"
                 android:checked="false"
                 android:gravity="center"
                 android:padding="8dp"
                 android:text="SELL"
-                android:textColor="@drawable/radio_button_text_color" />
+                android:textColor="@drawable/radio_default_text_color" />
 
             <RadioButton
                 android:id="@+id/new_coin_radio_watch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/radio_button_background"
+                android:background="@drawable/radio_default_background"
                 android:button="@null"
                 android:checked="false"
                 android:gravity="center"
                 android:padding="8dp"
                 android:text="WATCH"
-                android:textColor="@drawable/radio_button_text_color" />
+                android:textColor="@drawable/radio_default_text_color" />
         </RadioGroup>
 
         <TextView

@@ -18,10 +18,8 @@ import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import com.example.lemoncream.myapplication.Model.Deserializers.PriceCurrentDeserializer;
-import com.example.lemoncream.myapplication.Model.Deserializers.PriceHistoricalDeserializer;
-import com.example.lemoncream.myapplication.Model.GsonModels.PriceCurrent;
-import com.example.lemoncream.myapplication.Model.GsonModels.PriceHistorical;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceDeserializer;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceFull;
 import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
 import com.example.lemoncream.myapplication.Model.RealmModels.Exchange;
 import com.example.lemoncream.myapplication.Model.RealmModels.Pair;
@@ -40,8 +38,8 @@ import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import io.reactivex.Observable;
-import io.reactivex.Observer;
+import io.reactivex.Single;
+import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -221,45 +219,33 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
     private void requestCurrentPrice() {
         Retrofit retrofit = RetrofitHelper
                 .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
-                        GsonHelper.createGsonBuilder(PriceCurrent.class, new PriceCurrentDeserializer()).create());
+                        GsonHelper.createGsonBuilder(PriceFull.class, new PriceDeserializer()).create());
         PriceService coinListService = retrofit.create(PriceService.class);
-        Observable<PriceCurrent> priceRequest = coinListService.getCurrentPrice(mCurrentPair.getfCoin().getSymbol(),
+        Single<PriceFull> priceRequest = coinListService.getSingleCurrentPrice(mCurrentPair.getfCoin().getSymbol(),
                 mCurrentPair.gettCoin().getSymbol(),
                 mCurrentExchange.getName());
 
         priceRequest.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<PriceCurrent>() {
+                .subscribe(new SingleObserver<PriceFull>() {
                     @Override
-                    public void onSubscribe(Disposable d) {
-                        Log.d(TAG, "onSubscribe: ");
-                    }
+                    public void onSubscribe(Disposable d) {}
 
                     @Override
-                    public void onNext(PriceCurrent priceCurrent) {
-                        Log.d(TAG, "onNext: ");
-                        parsePriceData(priceCurrent);
+                    public void onSuccess(PriceFull priceFull) {
+                        parsePriceData(priceFull);
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        Log.d(TAG, "onError: ");
-                        //TODO Handle error
                         e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        Log.d(TAG, "onComplete: ");
                     }
                 });
     }
 
-    private void parsePriceData(PriceCurrent priceCurrentData) {
-        //TODO Handle null error
-        if (priceCurrentData != null) {
-            String currentTsym = mCurrentPair.gettCoin().getSymbol();
-            Float currentPrice = priceCurrentData.getPrices().get(currentTsym);
+    private void parsePriceData(PriceFull priceFull) {
+        if (priceFull != null) {
+            Float currentPrice = priceFull.getTsymPriceDetail().getPrice();
             mCurrentPriceText.setText(String.valueOf(mDecimalFormat.format(currentPrice)));
             mTradePriceEdit.setHint(String.valueOf(mDecimalFormat.format(currentPrice)));
         }

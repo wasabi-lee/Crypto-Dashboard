@@ -8,13 +8,11 @@ public class PriceParams {
 
     private String fsym;
     private String tsym;
-    private long timestamp;
     private String exchangeName;
 
-    public PriceParams(String fsym, String tsym, long timestamp, String exchangeName) {
+    public PriceParams(String fsym, String tsym, String exchangeName) {
         this.fsym = fsym;
         this.tsym = tsym;
-        this.timestamp = timestamp;
         this.exchangeName = exchangeName;
     }
 
@@ -34,14 +32,6 @@ public class PriceParams {
         this.tsym = tsym;
     }
 
-       public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-
     public String getExchangeName() {
         return exchangeName;
     }
@@ -49,4 +39,5 @@ public class PriceParams {
     public void setExchangeName(String exchangeName) {
         this.exchangeName = exchangeName;
     }
+
 }

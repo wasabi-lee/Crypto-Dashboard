@@ -50,8 +50,8 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/chart_current_price_text" />
 
-            <LinearLayout
-                android:id="@+id/chart_timeframe_container"
+            <RadioGroup
+                android:id="@+id/chart_timeframe_radio_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -61,62 +61,90 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/chart_candlestick_chart">
 
-                <TextView
-                    android:id="@+id/chart_timeframe_text_one_day"
+                <RadioButton
+                    android:id="@+id/chart_timeframe_radio_one_day"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="1D" />
+                    android:text="1D"
+                    android:checked="true"
+                    android:background="@null"
+                    android:textColor="@drawable/radio_timframe_text_color"
+                    android:button="@null"/>
 
-                <TextView
-                    android:id="@+id/chart_timeframe_text_three_day"
+                <RadioButton
+                    android:id="@+id/chart_timeframe_radio_three_day"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="3D" />
+                    android:text="3D"
+                    android:checked="false"
+                    android:background="@null"
+                    android:textColor="@drawable/radio_timframe_text_color"
+                    android:button="@null"/>
 
-                <TextView
-                    android:id="@+id/chart_timeframe_text_one_week"
+                <RadioButton
+                    android:id="@+id/chart_timeframe_radio_one_week"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="1W" />
+                    android:text="1W"
+                    android:checked="false"
+                    android:background="@null"
+                    android:textColor="@drawable/radio_timframe_text_color"
+                    android:button="@null"/>
 
-                <TextView
-                    android:id="@+id/chart_timeframe_text_one_month"
+                <RadioButton
+                    android:id="@+id/chart_timeframe_radio_one_month"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="1M" />
+                    android:text="1M"
+                    android:checked="false"
+                    android:background="@null"
+                    android:textColor="@drawable/radio_timframe_text_color"
+                    android:button="@null"/>
 
-                <TextView
-                    android:id="@+id/chart_timeframe_text_three_months"
+                <RadioButton
+                    android:id="@+id/chart_timeframe_raio_three_months"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="3M" />
+                    android:text="3M"
+                    android:checked="false"
+                    android:background="@null"
+                    android:textColor="@drawable/radio_timframe_text_color"
+                    android:button="@null"/>
 
-                <TextView
-                    android:id="@+id/chart_timeframe_text_six_months"
+                <RadioButton
+                    android:id="@+id/chart_timeframe_radio_six_months"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="6M" />
+                    android:text="6M"
+                    android:checked="false"
+                    android:background="@null"
+                    android:textColor="@drawable/radio_timframe_text_color"
+                    android:button="@null"/>
 
-                <TextView
-                    android:id="@+id/chart_timeframe_text_one_year"
+                <RadioButton
+                    android:id="@+id/chart_timeframe_radio_one_year"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="1Y" />
-            </LinearLayout>
+                    android:text="1Y"
+                    android:checked="false"
+                    android:background="@null"
+                    android:textColor="@drawable/radio_timframe_text_color"
+                    android:button="@null"/>
+            </RadioGroup>
 
             <LinearLayout
                 android:id="@+id/chart_data_linearlayout_1"
@@ -127,7 +155,7 @@
                 android:gravity="center"
                 android:orientation="vertical"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_container"
+                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_radio_group"
                 android:layout_marginLeft="8dp">
 
                 <TextView
@@ -155,7 +183,7 @@
                 android:orientation="vertical"
                 app:layout_constraintEnd_toStartOf="@+id/chart_data_linearlayout_3"
                 app:layout_constraintStart_toEndOf="@+id/chart_data_linearlayout_1"
-                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_container">
+                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_radio_group">
 
                 <TextView
                     android:id="@+id/chart_dummy_low_text"
@@ -181,7 +209,7 @@
                 android:gravity="center"
                 android:orientation="vertical"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_container"
+                app:layout_constraintTop_toBottomOf="@+id/chart_timeframe_radio_group"
                 android:layout_marginRight="8dp">
 
 
@@ -202,4 +230,13 @@
 
         </android.support.constraint.ConstraintLayout>
     </ScrollView>
+
+    <ProgressBar
+        android:id="@+id/chart_frag_progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
 </FrameLayout>

@@ -3,6 +3,7 @@
     <color name="colorPrimaryBackroundDark">@android:color/background_dark</color>
     <color name="colorPrimaryBackroundLight">#e4e4e4</color>
     <color name="colorTextDarkTheme">#ffffff</color>
+    <color name="colorTextLightTheme">#4b4b4b</color>
 
     <color name="colorPrimary">#13cfd7</color>
     <color name="colorPrimaryDark">#00d6d7</color>
@@ -14,4 +15,6 @@
 
     <color name="color_change_positive">#00e28c</color>
     <color name="color_change_negative">#ff474d</color>
+
+    <color name="color_timeframe_text_color">#ff9100</color>
 </resources>

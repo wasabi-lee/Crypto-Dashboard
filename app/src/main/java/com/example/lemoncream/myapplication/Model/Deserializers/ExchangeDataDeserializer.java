@@ -35,27 +35,7 @@ public class ExchangeDataDeserializer implements JsonDeserializer {
 
     @Override
     public Object deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-//        if (json != null) {
-//            final JsonObject jsonObject = json.getAsJsonObject();
-//            HashMap<String, HashMap<String, String[]>> coinlist = new HashMap<>();
-//            for (Map.Entry<String, JsonElement> outer_entry : jsonObject.entrySet()) {
-//                String exchangeName = outer_entry.getKey();
-//                JsonObject value = outer_entry.getValue().getAsJsonObject();
-////                Log.d(TAG, exchangeName + ": ");
-//                HashMap<String, String[]> pairs = new HashMap<>();
-//                for (Map.Entry<String, JsonElement> inner_entry : value.entrySet()) {
-//                    String fsym = inner_entry.getKey();
-//                    String[] tsyms = convertToStringArray(inner_entry.getValue().getAsJsonArray());
-////                    Log.d(TAG, "[" + fsym + ": " + Arrays.toString(tsyms) + "], \n");
-//                    pairs.put(fsym, tsyms);
-//                }
-//                coinlist.put(exchangeName, pairs);
-//            }
-//            final ExchangeG result = new ExchangeG();
-//            result.setExchanges(coinlist);
-//            return result;
-//        }
-//        return null;
+
         if (json != null) {
             final JsonObject jsonObject = json.getAsJsonObject();
             ExchangeData result = new ExchangeData();
@@ -96,21 +76,6 @@ public class ExchangeDataDeserializer implements JsonDeserializer {
         return null;
     }
 
-//    public void convertJsonToRealm(JsonObject jsonObject) {
-//        if (jsonObject != null) {
-//            Map<String, Map<String, String[]>> coinlist = new HashMap<>();
-//            for (Map.Entry<String, JsonElement> outer_entry : jsonObject.entrySet()) {
-//                String exchangeName = outer_entry.getKey();
-//                JsonObject value = outer_entry.getValue().getAsJsonObject();
-//                Log.d(TAG, exchangeName + ": ");
-//                for (Map.Entry<String, JsonElement> inner_entry : value.entrySet()) {
-//                    String fsym = inner_entry.getKey();
-//                    String[] tsyms = convertToStringArray(inner_entry.getValue().getAsJsonArray());
-//                    Log.d(TAG, "[" + fsym + ": " + Arrays.toString(tsyms) + "], \n");
-//                }
-//            }
-//        }
-//    }
 
     private String[] convertToStringArray(JsonArray jsonArray) {
         String[] stringArray = new String[jsonArray.size()];

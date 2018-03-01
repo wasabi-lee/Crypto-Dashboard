@@ -35,4 +35,12 @@
 
     </LinearLayout>
 
+    <ProgressBar
+        android:id="@+id/portfolio_frag_progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
 </FrameLayout>

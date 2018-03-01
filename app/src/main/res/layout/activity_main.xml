@@ -55,16 +55,18 @@
                     android:textSize="12sp"
                     android:textColor="@android:color/white"/>
                 <TextView
+                    android:id="@+id/main_portfolio_value_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="$30,000,000"
+                    android:text="No data"
                     android:textSize="36sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"/>
                 <TextView
+                    android:id="@+id/main_portfolio_change_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="28.00%"
+                    android:text="No data"
                     android:textStyle="bold"
                     android:textSize="12sp"
                     android:textColor="@android:color/white"/>
@@ -108,15 +110,5 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/fab_margin"
-        app:layout_anchor="@id/app_bar"
-        app:layout_anchorGravity="bottom|end"
-        app:srcCompat="@android:drawable/ic_dialog_email"
-        android:visibility="gone"/>
 
 </android.support.design.widget.CoordinatorLayout>

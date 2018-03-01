@@ -1,6 +1,7 @@
 package com.example.lemoncream.myapplication.Fragment;
 
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -16,11 +17,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 import com.example.lemoncream.myapplication.Adapter.BagListAdapter;
-import com.example.lemoncream.myapplication.Model.Deserializers.PriceCurrentDeserializer;
-import com.example.lemoncream.myapplication.Model.Deserializers.PriceHistoricalDeserializer;
-import com.example.lemoncream.myapplication.Model.GsonModels.CombinedPriceData;
-import com.example.lemoncream.myapplication.Model.GsonModels.PriceCurrent;
-import com.example.lemoncream.myapplication.Model.GsonModels.PriceHistorical;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceDeserializer;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceFull;
 import com.example.lemoncream.myapplication.Model.RealmModels.TxHistory;
 import com.example.lemoncream.myapplication.Model.TempModels.BagPriceData;
 import com.example.lemoncream.myapplication.Model.TempModels.PriceParams;
@@ -29,19 +27,20 @@ import com.example.lemoncream.myapplication.Network.GsonHelper;
 import com.example.lemoncream.myapplication.Network.PriceService;
 import com.example.lemoncream.myapplication.Network.RetrofitHelper;
 import com.example.lemoncream.myapplication.R;
+import com.example.lemoncream.myapplication.Utils.Callbacks.OnTotalValueChangedListener;
+import com.example.lemoncream.myapplication.Utils.Formatters.SignSwitcher;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.LinkedHashMap;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -54,16 +53,21 @@ import retrofit2.Retrofit;
 public class PortfolioFragment extends Fragment {
 
     private static final String TAG = PortfolioFragment.class.getSimpleName();
+
+    private OnTotalValueChangedListener mCallback;
+
     private boolean mFirstRun = true;
 
     @BindView(R.id.portfolio_frag_add_new_container)
     LinearLayout mAddNewLayout;
     @BindView(R.id.portfolio_frag_recycler_view)
     RecyclerView mBagRecyclerView;
+    @BindView(R.id.portfolio_frag_progress_bar)
+    ProgressBar mProgressBar;
+
 
     private LinkedHashMap<String, BagPriceData> mDataset;
 
-    private ProgressBar mProgressBar;
     private BagListAdapter mAdapter;
     private Realm mRealm;
 
@@ -72,6 +76,15 @@ public class PortfolioFragment extends Fragment {
         // Required empty public constructor
     }
 
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            mCallback = (OnTotalValueChangedListener) context;
+        } catch (ClassCastException e) {
+                throw new ClassCastException(context.toString()
+                        + " must implement OnUnitChangedListener");}
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -87,16 +100,11 @@ public class PortfolioFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: ");
         mRealm = Realm.getDefaultInstance();
-        setupProgressBar();
         populateBagList(loadBagData());
         requestPriceData(createPriceApiCallParams());
 
     }
 
-    private void setupProgressBar() {
-        mProgressBar = new ProgressBar(getContext());
-        mProgressBar.setIndeterminate(true);
-    }
 
     private LinkedHashMap<String, BagPriceData> loadBagData() {
         mProgressBar.setVisibility(View.VISIBLE);
@@ -109,7 +117,7 @@ public class PortfolioFragment extends Fragment {
         for (Bag bag : bags) {
             if (bag == null || bag.getTradePair() == null) continue;
             String pairName = bag.getTradePair().getPairName();
-            dataset.put(pairName, new BagPriceData(bag, null, null));
+            dataset.put(pairName, new BagPriceData(bag, null));
         }
         mDataset = dataset;
         return dataset;
@@ -121,7 +129,6 @@ public class PortfolioFragment extends Fragment {
             // TODO Show error message
         } else if (dataset.size() == 0) {
             // TODO Show 'add first transaction' message
-            mAddNewLayout.setVisibility(View.VISIBLE);
         } else {
             // Passing only values of the Map as ArrayList to fetch each element easier
             mAdapter = new BagListAdapter(getContext(), new ArrayList<>(dataset.values()));
@@ -129,61 +136,62 @@ public class PortfolioFragment extends Fragment {
             mBagRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
             mBagRecyclerView.setItemAnimator(new DefaultItemAnimator());
             mBagRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+            mBagRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(()
+                    -> mCallback.onTotalValueChanged(mAdapter.getTotalPortfolioValue(), mAdapter.getTotalPortfolioValue24hr()));
             mBagRecyclerView.setAdapter(mAdapter);
         }
     }
 
     private void requestPriceData(ArrayList<PriceParams> params) {
         if (params == null) return;
-        Retrofit retrofitCurrent = RetrofitHelper
+
+        Retrofit retrofitTsym = RetrofitHelper
                 .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
-                        GsonHelper.createGsonBuilder(PriceCurrent.class, new PriceCurrentDeserializer()).create());
-        Retrofit retrofitPrev = RetrofitHelper
-                .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
-                        GsonHelper.createGsonBuilder(PriceHistorical.class, new PriceHistoricalDeserializer()).create());
+                        GsonHelper.createGsonBuilder(PriceFull.class, new PriceDeserializer()).create());
+        PriceService currentPriceService = retrofitTsym.create(PriceService.class);
+
         Observable.fromIterable(params)
-                .flatMap(priceParams -> {
-                    PriceService coinListServiceCurrent = retrofitCurrent.create(PriceService.class);
-                    PriceService coinListServicePrev = retrofitPrev.create(PriceService.class);
-                    Observable<PriceCurrent> priceRequest = coinListServiceCurrent
-                            .getCurrentPrice(priceParams.getFsym(), priceParams.getTsym(),
+                .flatMap((Function<PriceParams, ObservableSource<?>>) priceParams -> {
+                    Observable<PriceFull> tsymPriceObservable = currentPriceService
+                            .getMultipleCurrentPrices(priceParams.getFsym(),
+                                    priceParams.getTsym(),
                                     priceParams.getExchangeName());
-                    Observable<PriceHistorical> priceRequestHistorical = coinListServicePrev
-                            .getHistoricalPrice(priceParams.getFsym(), priceParams.getTsym(),
-                                    priceParams.getTimestamp(), priceParams.getExchangeName());
-
-                    return Observable.zip(priceRequest, priceRequestHistorical,
-                            (BiFunction<PriceCurrent, PriceHistorical, Object>)
-                                    (currentPrice, previousPrice)
-                                            -> new CombinedPriceData(previousPrice.getFsym(), previousPrice.getTsym(),
-                                            previousPrice.getPrices(), currentPrice.getPrices()));
-
-                }).subscribeOn(Schedulers.io())
+                    Observable<PriceFull> baseBtcPriceObservable = currentPriceService
+                            .getMultipleCurrentPrices(priceParams.getFsym(),
+                                    SignSwitcher.BASE_CURRENCY.toUpperCase() + ",BTC");
+                    return Observable.zip(tsymPriceObservable, baseBtcPriceObservable, (tsymPrice, baseBtcPrice) -> {
+                        tsymPrice.setBasePriceDetail(baseBtcPrice.getBasePriceDetail());
+                        tsymPrice.setBtcPriceDetail(baseBtcPrice.getBtcPriceDetail());
+                        return tsymPrice;
+                    });
+                })
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<Object>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-
                     }
 
                     @Override
-                    public void onNext(Object price) {
-                        if (price != null) {
-                            CombinedPriceData data = (CombinedPriceData) price;
-                            String key = data.getFsym() + "_" + data.getTsym();
-                            Log.d(TAG, "onNext: " + key);
-                            mDataset.get(key).setCurrentPrice(data.getCurrentPrices());
-                            mDataset.get(key).setPreviousPrice(data.getPreviousPrices());
-                        }
+                    public void onNext(Object o) {
+                        PriceFull priceFull = (PriceFull) o;
+                        String pairName = priceFull.getFsym() + "_" + priceFull.getTsymPriceDetail().getTsym();
+                        BagPriceData dataToFix = mDataset.get(pairName);
+                        dataToFix.setTsymPriceDetail(priceFull.getTsymPriceDetail());
+                        dataToFix.setBasePriceDetail(priceFull.getBasePriceDetail());
+                        dataToFix.setBtcPriceDetail(priceFull.getBtcPriceDetail());
                     }
 
                     @Override
                     public void onError(Throwable e) {
-
+                        e.printStackTrace();
                     }
 
                     @Override
                     public void onComplete() {
+                        Log.d(TAG, "onComplete: ");
+                        mProgressBar.setVisibility(View.GONE);
                         mAdapter.setData(new ArrayList<>(mDataset.values()));
                         mAdapter.notifyDataSetChanged();
                     }
@@ -192,20 +200,29 @@ public class PortfolioFragment extends Fragment {
 
     private ArrayList<PriceParams> createPriceApiCallParams() {
         ArrayList<PriceParams> params = new ArrayList<>();
-        Calendar calendar = Calendar.getInstance();
         for (BagPriceData data : mDataset.values()) {
             if (data == null) continue;
             String fsym = data.getBag().getTradePair().getfCoin().getSymbol();
             String tsyms = data.getBag().getTradePair().gettCoin().getSymbol(); //TODO Fix this to Base currency later
-            long ts = calendar.getTimeInMillis() - (1000 * 60 * 60 * 24);
             String exchange = mRealm.where(TxHistory.class)
                     .equalTo("txHolder.tradePair.pairName", data.getBag().getTradePair().getPairName())
                     .findAllSorted("date")
                     .last().getExchange().getName(); // Getting the latest exchange that has been added
-            params.add(new PriceParams(fsym, tsyms, ts, exchange));
+            params.add(new PriceParams(fsym, tsyms, exchange));
         }
         return params;
     }
+
+    public void changeDisplayCurrency(boolean baseCurrencyDisplayMode) {
+        mAdapter.setBaseCurrencyDisplayMode(baseCurrencyDisplayMode);
+        mAdapter.notifyDataSetChanged();
+    }
+
+    public void changeDisplayChangeUnit(boolean pctChangeDisplayMode) {
+        mAdapter.setPctChangeDisplayMode(pctChangeDisplayMode);
+        mAdapter.notifyDataSetChanged();
+    }
+
 
     @Override
     public void onResume() {
@@ -214,8 +231,8 @@ public class PortfolioFragment extends Fragment {
         if (mFirstRun) {
             mFirstRun = false;
         } else {
-            mAdapter.setData(new ArrayList<>(loadBagData().values()));
-            mAdapter.notifyDataSetChanged();
+            loadBagData();
+            requestPriceData(createPriceApiCallParams());
         }
     }
 

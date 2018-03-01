@@ -1,5 +1,6 @@
 package com.example.lemoncream.myapplication.Model.TempModels;
 
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceDetail;
 import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
 
 import java.util.HashMap;
@@ -10,13 +11,16 @@ import java.util.HashMap;
 
 public class BagPriceData {
     private Bag bag;
-    private HashMap<String, Float> currentPrice;
-    private HashMap<String, Float> previousPrice;
+    private PriceDetail tsymPriceDetail;
+    private PriceDetail basePriceDetail;
+    private PriceDetail btcPriceDetail;
 
-    public BagPriceData(Bag bag, HashMap<String, Float> currentPrice, HashMap<String, Float> previousPrice) {
+    public BagPriceData() {
+    }
+
+    public BagPriceData(Bag bag, PriceDetail tsymPriceDetail) {
         this.bag = bag;
-        this.currentPrice = currentPrice;
-        this.previousPrice = previousPrice;
+        this.tsymPriceDetail = tsymPriceDetail;
     }
 
     public Bag getBag() {
@@ -27,19 +31,27 @@ public class BagPriceData {
         this.bag = bag;
     }
 
-    public HashMap<String, Float> getCurrentPrice() {
-        return currentPrice;
+    public PriceDetail getTsymPriceDetail() {
+        return tsymPriceDetail;
     }
 
-    public void setCurrentPrice(HashMap<String, Float> currentPrice) {
-        this.currentPrice = currentPrice;
+    public void setTsymPriceDetail(PriceDetail tsymPriceDetail) {
+        this.tsymPriceDetail = tsymPriceDetail;
     }
 
-    public HashMap<String, Float> getPreviousPrice() {
-        return previousPrice;
+    public PriceDetail getBasePriceDetail() {
+        return basePriceDetail;
     }
 
-    public void setPreviousPrice(HashMap<String, Float> previousPrice) {
-        this.previousPrice = previousPrice;
+    public void setBasePriceDetail(PriceDetail basePriceDetail) {
+        this.basePriceDetail = basePriceDetail;
+    }
+
+    public PriceDetail getBtcPriceDetail() {
+        return btcPriceDetail;
+    }
+
+    public void setBtcPriceDetail(PriceDetail btcPriceDetail) {
+        this.btcPriceDetail = btcPriceDetail;
     }
 }

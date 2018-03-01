@@ -3,44 +3,57 @@ package com.example.lemoncream.myapplication.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.example.lemoncream.myapplication.Adapter.ViewPagerAdapter;
 import com.example.lemoncream.myapplication.Fragment.PortfolioFragment;
 import com.example.lemoncream.myapplication.R;
 import com.example.lemoncream.myapplication.Fragment.WatchlistFragment;
+import com.example.lemoncream.myapplication.Utils.Callbacks.OnTotalValueChangedListener;
+import com.example.lemoncream.myapplication.Utils.Formatters.SignSwitcher;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnTotalValueChangedListener {
 
-    @BindView(R.id.toolbar) Toolbar toolbar;
-    @BindView(R.id.portfolio_spinner) Spinner toolbarSpinner;
-    @BindView(R.id.main_tab_layout) TabLayout tabLayout;
-    @BindView(R.id.main_view_pager) ViewPager viewPager;
-    @BindView(R.id.main_line_chart) LineChart lineChart;
-    @BindView(R.id.fab) FloatingActionButton fab;
+    @BindView(R.id.toolbar)
+    Toolbar mToolbar;
+    @BindView(R.id.portfolio_spinner)
+    Spinner mToolbarSpinner;
+    @BindView(R.id.main_tab_layout)
+    TabLayout mTabLayout;
+    @BindView(R.id.main_view_pager)
+    ViewPager mViewPager;
+    @BindView(R.id.main_line_chart)
+    LineChart mLineChart;
+    @BindView(R.id.main_portfolio_value_text)
+    TextView mPortfolioValueText;
+    @BindView(R.id.main_portfolio_change_text)
+    TextView mPortfolioChangeText;
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private ViewPagerAdapter mAdapter;
+    private boolean baseCurrencyDisplayMode = false;
+    private boolean pctChangeDisplayMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,23 +61,27 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        toolbar.setTitle("");
-        setSupportActionBar(toolbar);
+        mToolbar.setTitle("");
+        setSupportActionBar(mToolbar);
+
+        mPortfolioValueText.setOnClickListener(this);
+        mPortfolioChangeText.setOnClickListener(this);
 
         String[] samplePortfolioList = new String[]{"Main Portfolio", "Pocket money", "Vacation project"};
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_drowdown_header, samplePortfolioList);
         spinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        toolbarSpinner.setAdapter(spinnerAdapter);
+        mToolbarSpinner.setAdapter(spinnerAdapter);
 
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new PortfolioFragment(), "Portfolio");
-        adapter.addFragment(new WatchlistFragment(), "Watchlist");
-        viewPager.setAdapter(adapter);
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+
+        mAdapter = new ViewPagerAdapter(getSupportFragmentManager());
+        mAdapter.addFragment(new PortfolioFragment(), "Portfolio");
+        mAdapter.addFragment(new WatchlistFragment(), "Watchlist");
+        mViewPager.setAdapter(mAdapter);
+        mTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                viewPager.setCurrentItem(tab.getPosition());
-                Log.d(TAG, "onTabSelected: " + viewPager.getAdapter().getPageTitle(tab.getPosition()));
+                mViewPager.setCurrentItem(tab.getPosition());
+                Log.d(TAG, "onTabSelected: " + mViewPager.getAdapter().getPageTitle(tab.getPosition()));
             }
 
             @Override
@@ -77,33 +94,33 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        tabLayout.setupWithViewPager(viewPager);
+        mTabLayout.setupWithViewPager(mViewPager);
 
 
-        lineChart.setViewPortOffsets(0f, 80f, 0f, 0f);
+        mLineChart.setViewPortOffsets(0f, 80f, 0f, 0f);
 
-        lineChart.setDrawGridBackground(false);
-        lineChart.setTouchEnabled(false);
-        lineChart.setContentDescription("");
-        lineChart.getDescription().setEnabled(false);
+        mLineChart.setDrawGridBackground(false);
+        mLineChart.setTouchEnabled(false);
+        mLineChart.setContentDescription("");
+        mLineChart.getDescription().setEnabled(false);
 
-        lineChart.getLegend().setEnabled(false);
-        lineChart.getAxisLeft().setDrawLabels(false);
-        lineChart.getAxisLeft().setDrawAxisLine(false);
-        lineChart.getAxisLeft().setDrawGridLines(false);
-        lineChart.getAxisLeft().setEnabled(false);
+        mLineChart.getLegend().setEnabled(false);
+        mLineChart.getAxisLeft().setDrawLabels(false);
+        mLineChart.getAxisLeft().setDrawAxisLine(false);
+        mLineChart.getAxisLeft().setDrawGridLines(false);
+        mLineChart.getAxisLeft().setEnabled(false);
 
-        lineChart.getAxisRight().setDrawLabels(false);
-        lineChart.getAxisRight().setDrawAxisLine(false);
-        lineChart.getAxisRight().setDrawGridLines(false);
-        lineChart.getAxisRight().setEnabled(false);
+        mLineChart.getAxisRight().setDrawLabels(false);
+        mLineChart.getAxisRight().setDrawAxisLine(false);
+        mLineChart.getAxisRight().setDrawGridLines(false);
+        mLineChart.getAxisRight().setEnabled(false);
 
-        lineChart.getXAxis().setDrawLabels(false);
-        lineChart.getXAxis().setDrawGridLines(false);
-        lineChart.getXAxis().setDrawAxisLine(false);
-        lineChart.getXAxis().setEnabled(false);
+        mLineChart.getXAxis().setDrawLabels(false);
+        mLineChart.getXAxis().setDrawGridLines(false);
+        mLineChart.getXAxis().setDrawAxisLine(false);
+        mLineChart.getXAxis().setEnabled(false);
 
-        lineChart.getXAxis().setDrawGridLines(false);
+        mLineChart.getXAxis().setDrawGridLines(false);
         ArrayList<Entry> vals = new ArrayList<>();
         int count = 10;
         int range = 100;
@@ -125,16 +142,51 @@ public class MainActivity extends AppCompatActivity {
         dataSets.add(set1);
         LineData data = new LineData(dataSets);
         data.setDrawValues(false);
-        lineChart.setData(data);
+        mLineChart.setData(data);
 
-        fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show());
+    }
 
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.main_portfolio_value_text:
+                baseCurrencyDisplayMode = !baseCurrencyDisplayMode;
+                ((PortfolioFragment) mAdapter.getFragment(mTabLayout.getSelectedTabPosition())).changeDisplayCurrency(baseCurrencyDisplayMode);
+                break;
+            case R.id.main_portfolio_change_text:
+                pctChangeDisplayMode = !pctChangeDisplayMode;
+                ((PortfolioFragment) mAdapter.getFragment(mTabLayout.getSelectedTabPosition())).changeDisplayChangeUnit(pctChangeDisplayMode);
+                break;
+        }
+    }
 
+    @Override
+    public void onTotalValueChanged(float totalPortfolioValue, float totalPortfolioValue24hr) {
+        DecimalFormat df = new DecimalFormat("#,###,###.##");
+        String portfolioValueStr = String.valueOf(df.format(totalPortfolioValue));
+        portfolioValueStr = baseCurrencyDisplayMode ?
+                SignSwitcher.getBaseCurrencySign() + " " + portfolioValueStr :
+                SignSwitcher.getBtcSign() + " " + portfolioValueStr; //TODO Change here to accept sharedpref
 
+        float change = pctChangeDisplayMode ?
+                ((totalPortfolioValue - totalPortfolioValue24hr) / totalPortfolioValue24hr * 100)
+                : (totalPortfolioValue - totalPortfolioValue24hr);
+        String portfolioChangeStr = pctChangeDisplayMode ?
+                (String.valueOf(df.format(change)) + "%")
+                : String.valueOf(df.format(change));
+        portfolioChangeStr = baseCurrencyDisplayMode ?
+                SignSwitcher.getBaseCurrencySign() + " " + portfolioChangeStr :
+                SignSwitcher.getBtcSign() + " " + portfolioChangeStr; //TODO Change here to accept sharedpref
 
-
-
+        mPortfolioValueText.setText(portfolioValueStr);
+        if (change > 0) {
+            mPortfolioChangeText.setTextColor(Color.GREEN);
+            mPortfolioChangeText.setText(portfolioChangeStr);
+        } else if (change < 0) {
+            mPortfolioChangeText.setTextColor(Color.RED);
+            mPortfolioChangeText.setText(portfolioChangeStr);
+        }
+        mPortfolioChangeText.setText(portfolioChangeStr);
     }
 
     @Override
