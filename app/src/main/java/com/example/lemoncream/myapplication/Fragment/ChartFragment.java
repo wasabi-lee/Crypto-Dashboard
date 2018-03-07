@@ -16,7 +16,9 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.example.lemoncream.myapplication.Activity.CoinDetailActivity;
+import com.example.lemoncream.myapplication.Adapter.ViewPagerAdapter;
 import com.example.lemoncream.myapplication.CustomViews.CandleChart;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceDeserializer;
 import com.example.lemoncream.myapplication.Model.GsonModels.ChartData;
 import com.example.lemoncream.myapplication.Model.GsonModels.Datum;
 import com.example.lemoncream.myapplication.Model.GsonModels.PriceFull;
@@ -25,6 +27,8 @@ import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
 import com.example.lemoncream.myapplication.Model.RealmModels.Pair;
 import com.example.lemoncream.myapplication.Model.RealmModels.TxHistory;
 import com.example.lemoncream.myapplication.Network.ChartDataService;
+import com.example.lemoncream.myapplication.Network.GsonHelper;
+import com.example.lemoncream.myapplication.Network.PriceService;
 import com.example.lemoncream.myapplication.Network.RetrofitHelper;
 import com.example.lemoncream.myapplication.R;
 import com.example.lemoncream.myapplication.Utils.Callbacks.OnUnitToggleListener;
@@ -48,6 +52,8 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import io.realm.Realm;
+import io.realm.RealmResults;
+import io.realm.Sort;
 import retrofit2.Retrofit;
 
 /**
@@ -59,34 +65,46 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
     private OnUnitToggleListener mCallback;
 
     private Bag mCurrentBag;
-    private PriceDetail mTsymPriceDetail;
     private String mExchange, mFsym, mTsym;
     private Realm mRealm;
 
-    @BindView(R.id.chart_header_exchange_pair_text)  TextView mChartHeaderText;
-    @BindView(R.id.chart_current_price_text)  TextView mCurrentPriceText;
-    @BindView(R.id.chart_change_text)  TextView mChangeText;
+    @BindView(R.id.chart_header_exchange_pair_text)
+    TextView mChartHeaderText;
+    @BindView(R.id.chart_current_price_text)
+    TextView mCurrentPriceText;
+    @BindView(R.id.chart_change_text)
+    TextView mChangeText;
 
-    @BindView(R.id.chart_candlestick_chart)  CandleChart mCandleChart;
+    @BindView(R.id.chart_candlestick_chart)
+    CandleChart mCandleChart;
 
-    @BindView(R.id.chart_timeframe_radio_group)  RadioGroup mTimeframeRadioGroup;
-    @BindView(R.id.chart_timeframe_radio_one_day)  RadioButton mTimeframeOneDay;
-    @BindView(R.id.chart_timeframe_radio_three_day)  RadioButton mTimeframeThreeDay;
-    @BindView(R.id.chart_timeframe_radio_one_week)  RadioButton mTimeframeOneWeek;
-    @BindView(R.id.chart_timeframe_radio_one_month)  RadioButton mTimeframeOneMonth;
-    @BindView(R.id.chart_timeframe_raio_three_months)  RadioButton mTimeframeThreeMonth;
-    @BindView(R.id.chart_timeframe_radio_six_months)  RadioButton mTimeframeSixMonths;
-    @BindView(R.id.chart_timeframe_radio_one_year)  RadioButton mTimeframeOneYear;
+    @BindView(R.id.chart_timeframe_radio_group)
+    RadioGroup mTimeframeRadioGroup;
+    @BindView(R.id.chart_timeframe_radio_one_day)
+    RadioButton mTimeframeOneDay;
+    @BindView(R.id.chart_timeframe_radio_three_day)
+    RadioButton mTimeframeThreeDay;
+    @BindView(R.id.chart_timeframe_radio_one_week)
+    RadioButton mTimeframeOneWeek;
+    @BindView(R.id.chart_timeframe_radio_one_month)
+    RadioButton mTimeframeOneMonth;
+    @BindView(R.id.chart_timeframe_raio_three_months)
+    RadioButton mTimeframeThreeMonth;
+    @BindView(R.id.chart_timeframe_radio_six_months)
+    RadioButton mTimeframeSixMonths;
+    @BindView(R.id.chart_timeframe_radio_one_year)
+    RadioButton mTimeframeOneYear;
 
-    @BindView(R.id.chart_high_text)  TextView mHighText;
-    @BindView(R.id.chart_low_text)  TextView mLowText;
-    @BindView(R.id.chart_volume_text)  TextView mVolumeText;
+    @BindView(R.id.chart_high_text)
+    TextView mHighText;
+    @BindView(R.id.chart_low_text)
+    TextView mLowText;
+    @BindView(R.id.chart_volume_text)
+    TextView mVolumeText;
 
     private HashMap<String, ChartTimeframe> mTimeframeSettings;
     private String mCurrentTimeframe = ChartTimeframeConfig.TIMEFRAME_ONE_DAY;
-
-    DecimalFormat dfVol = new DecimalFormat("#.##");
-    DecimalFormat dfPrice = new DecimalFormat("#.#######");
+    private PriceFull mPriceInfo;
 
     private boolean baseCurrencyDisplayMode = false;
     private boolean pctChangeDisplayMode = false;
@@ -102,7 +120,8 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
             mCallback = (OnUnitToggleListener) context;
         } catch (ClassCastException e) {
             throw new ClassCastException(context.toString()
-                    + " must implement OnUnitToggledListener");}
+                    + " must implement OnUnitToggledListener");
+        }
     }
 
     @Override
@@ -133,7 +152,7 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
         setInitialData();
         setListeners();
         configCandleStickChart();
-
+        requestCurrentPrice();
         requestChartData(mTimeframeSettings.get(ChartTimeframeConfig.TIMEFRAME_ONE_DAY));
 
     }
@@ -150,9 +169,8 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
 
             TxHistory latestTx = mRealm.where(TxHistory.class)
                     .equalTo("txHolder.tradePair.pairName", mCurrentBag.getTradePair().getPairName())
-                    .findAllSorted("date").last();
-            if (latestTx == null) return;
-            mExchange = latestTx.getExchange().getName();
+                    .sort("date", Sort.ASCENDING).findFirst();
+            mExchange = latestTx == null ? "CCCAGG" : latestTx.getExchange().getName();
         }
     }
 
@@ -178,6 +196,26 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
         mCandleChart.configAxis();
     }
 
+    public void requestCurrentPrice() {
+        Retrofit retrofit = RetrofitHelper
+                .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
+                        GsonHelper.createGsonBuilder(PriceFull.class, new PriceDeserializer()).create());
+        Observable<PriceFull> tsymPriceObservable = retrofit.create(PriceService.class).getMultipleCurrentPrices(mFsym, mTsym, mExchange);
+        Observable<PriceFull> baseBtcPriceObservable = retrofit.create(PriceService.class).getMultipleCurrentPrices(mFsym, SignSwitcher.BASE_CURRENCY + ",BTC");
+
+        Observable.zip(tsymPriceObservable, baseBtcPriceObservable, (tsymPrice, baseBtcPrice) -> {
+            tsymPrice.setBasePriceDetail(baseBtcPrice.getBasePriceDetail());
+            tsymPrice.setBtcPriceDetail(baseBtcPrice.getBtcPriceDetail());
+            return tsymPrice;
+        }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(price -> {
+                            if (price == null) return;
+                            mPriceInfo = price;
+                            parseData(baseCurrencyDisplayMode, pctChangeDisplayMode);
+                        }, Throwable::printStackTrace,
+                        () -> Log.d(TAG, "requestCurrentPrice: onComplete"));
+    }
 
     public void requestChartData(ChartTimeframe timeframe) {
         if (mCurrentBag == null) return;
@@ -210,15 +248,16 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
         populateCandleStickChart(yVals);
     }
 
-    public void parseData(PriceFull priceInfo, boolean baseCurrencyDisplayMode, boolean pctChangeDisplayMode) {
-        float price = baseCurrencyDisplayMode ? priceInfo.getBasePriceDetail().getPrice() : priceInfo.getTsymPriceDetail().getPrice();
+    public void parseData(boolean baseCurrencyDisplayMode, boolean pctChangeDisplayMode) {
+        if (mPriceInfo == null) return;
+        float price = baseCurrencyDisplayMode ? mPriceInfo.getBasePriceDetail().getPrice() : mPriceInfo.getTsymPriceDetail().getPrice();
         float change = pctChangeDisplayMode ?
-                (baseCurrencyDisplayMode ? priceInfo.getBasePriceDetail().getChangePercent24hr() : priceInfo.getTsymPriceDetail().getChangePercent24hr()) :
-                (baseCurrencyDisplayMode ? priceInfo.getBasePriceDetail().getChange24hr() : priceInfo.getTsymPriceDetail().getChange24hr());
+                (baseCurrencyDisplayMode ? mPriceInfo.getBasePriceDetail().getChangePercent24hr() : mPriceInfo.getTsymPriceDetail().getChangePercent24hr()) :
+                (baseCurrencyDisplayMode ? mPriceInfo.getBasePriceDetail().getChange24hr() : mPriceInfo.getTsymPriceDetail().getChange24hr());
 
-        float volume24hr = baseCurrencyDisplayMode ? priceInfo.getBasePriceDetail().getVolume24hr() : priceInfo.getTsymPriceDetail().getVolume24hr();
-        float high24hr = baseCurrencyDisplayMode ? priceInfo.getBasePriceDetail().getHigh24hr() : priceInfo.getTsymPriceDetail().getHigh24hr();
-        float low24hr = baseCurrencyDisplayMode ? priceInfo.getBasePriceDetail().getLow24hr() : priceInfo.getTsymPriceDetail().getLow24hr();
+        float volume24hr = baseCurrencyDisplayMode ? mPriceInfo.getBasePriceDetail().getVolume24hr() : mPriceInfo.getTsymPriceDetail().getVolume24hr();
+        float high24hr = baseCurrencyDisplayMode ? mPriceInfo.getBasePriceDetail().getHigh24hr() : mPriceInfo.getTsymPriceDetail().getHigh24hr();
+        float low24hr = baseCurrencyDisplayMode ? mPriceInfo.getBasePriceDetail().getLow24hr() : mPriceInfo.getTsymPriceDetail().getLow24hr();
 
         parsePriceData(price, change);
         parse24hrMarketData(volume24hr, high24hr, low24hr);
@@ -226,23 +265,19 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
 
     private void parsePriceData(float price, float change) {
         String sign = baseCurrencyDisplayMode ? SignSwitcher.getBaseCurrencySign() : SignSwitcher.getCurrencySign(mTsym);
-        String priceStr = price > 99 ? NumberFormatter.largeDf.format(price) : NumberFormatter.smallDf.format(price);
+        String priceStr = NumberFormatter.formatDecimals(price);
         mCurrentPriceText.setText(sign + " " + priceStr);
 
-        String changeStr = change > 99 ? NumberFormatter.largeDf.format(change) : NumberFormatter.smallDf.format(change);
+        String changeStr = NumberFormatter.formatDecimals(change);
         mChangeText.setText(pctChangeDisplayMode ? changeStr + " %" : changeStr);
-        if (change < 0) {
-            mChangeText.setTextColor(Color.RED);
-        } else if (change > 0) {
-            mChangeText.setTextColor(Color.GREEN);
-        }
+        mChangeText.setTextColor(NumberFormatter.getProfitTextColor(change));
     }
 
     private void parse24hrMarketData(float volume, float high, float low) {
         Log.d(TAG, "parse24hrMarketData: " + volume + ", " + high + ", " + low);
-        mVolumeText.setText(String.valueOf(volume > 99 ? NumberFormatter.largeDf.format(volume) : NumberFormatter.smallDf.format(volume)));
-        mHighText.setText(String.valueOf(high > 99 ? NumberFormatter.largeDf.format(high) : NumberFormatter.smallDf.format(high)));
-        mLowText.setText(String.valueOf(low > 99 ? NumberFormatter.largeDf.format(low) : NumberFormatter.smallDf.format(low)));
+        mVolumeText.setText(NumberFormatter.formatDecimals(volume));
+        mHighText.setText(NumberFormatter.formatDecimals(high));
+        mLowText.setText(NumberFormatter.formatDecimals(low));
     }
 
     private void populateCandleStickChart(ArrayList<CandleEntry> yVals) {
@@ -278,9 +313,11 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
         switch (view.getId()) {
             case R.id.chart_current_price_text:
                 baseCurrencyDisplayMode = !baseCurrencyDisplayMode;
-                pctChangeDisplayMode = !pctChangeDisplayMode;
                 mCallback.onUnitToggled(baseCurrencyDisplayMode, pctChangeDisplayMode);
                 break;
+            case R.id.chart_change_text:
+                pctChangeDisplayMode = !pctChangeDisplayMode;
+                mCallback.onUnitToggled(baseCurrencyDisplayMode, pctChangeDisplayMode);
         }
     }
 

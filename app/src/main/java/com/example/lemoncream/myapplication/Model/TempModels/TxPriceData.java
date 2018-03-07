@@ -1,36 +1,36 @@
 package com.example.lemoncream.myapplication.Model.TempModels;
 
-import com.example.lemoncream.myapplication.Model.RealmModels.TxHistory;
-
 /**
- * Created by LemonCream on 2018-03-02.
+ * Created by LemonCream on 2018-03-03.
  */
 
 public class TxPriceData {
 
-    private TxHistory txHistory;
-    private float currentPrice;
-    private float previousPrice;
-    private float currentBasePrice;
-    private float previousBasePrice;
+    int position;
+    private float currentPrice = -1;
+    private float currentBasePrice = -1;
+    private float previousBasePrice = -1;
 
     public TxPriceData() {
     }
 
-    public TxPriceData(TxHistory txHistory, float currentPrice, float previousPrice, float currentBasePrice, float previousBasePrice) {
-        this.txHistory = txHistory;
+    public TxPriceData(int position) {
+        this.position = position;
+    }
+
+    public TxPriceData(int position, float currentPrice, float currentBasePrice, float previousBasePrice) {
+        this.position = position;
         this.currentPrice = currentPrice;
-        this.previousPrice = previousPrice;
         this.currentBasePrice = currentBasePrice;
         this.previousBasePrice = previousBasePrice;
     }
 
-    public TxHistory getTxHistory() {
-        return txHistory;
+    public int getPosition() {
+        return position;
     }
 
-    public void setTxHistory(TxHistory txHistory) {
-        this.txHistory = txHistory;
+    public void setPosition(int position) {
+        this.position = position;
     }
 
     public float getCurrentPrice() {
@@ -39,14 +39,6 @@ public class TxPriceData {
 
     public void setCurrentPrice(float currentPrice) {
         this.currentPrice = currentPrice;
-    }
-
-    public float getPreviousPrice() {
-        return previousPrice;
-    }
-
-    public void setPreviousPrice(float previousPrice) {
-        this.previousPrice = previousPrice;
     }
 
     public float getCurrentBasePrice() {

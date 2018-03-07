@@ -6,14 +6,47 @@ package com.example.lemoncream.myapplication.Model.TempModels;
 
 public class PriceParams {
 
+    private int position;
     private String fsym;
     private String tsym;
     private String exchangeName;
+    private long timestamp;
+
 
     public PriceParams(String fsym, String tsym, String exchangeName) {
         this.fsym = fsym;
         this.tsym = tsym;
         this.exchangeName = exchangeName;
+    }
+    public PriceParams(int position, String fsym, String tsym, String exchangeName) {
+        this.position = position;
+        this.fsym = fsym;
+        this.tsym = tsym;
+        this.exchangeName = exchangeName;
+    }
+
+
+    public PriceParams(String fsym, String tsym, String exchangeName, long timestamp) {
+        this.fsym = fsym;
+        this.tsym = tsym;
+        this.exchangeName = exchangeName;
+        this.timestamp = timestamp;
+    }
+
+    public PriceParams(int position, String fsym, String tsym, String exchangeName, long timestamp) {
+        this.position = position;
+        this.fsym = fsym;
+        this.tsym = tsym;
+        this.exchangeName = exchangeName;
+        this.timestamp = timestamp;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
     }
 
     public String getFsym() {
@@ -38,6 +71,14 @@ public class PriceParams {
 
     public void setExchangeName(String exchangeName) {
         this.exchangeName = exchangeName;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
 }

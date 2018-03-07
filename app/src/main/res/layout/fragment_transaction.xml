@@ -1,13 +1,19 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.lemoncream.myapplication.Fragment.TransactionFragment">
+    tools:context="com.example.lemoncream.myapplication.Fragment.TransactionFragment"
+    android:orientation="vertical">
 
-    <!-- TODO: Update blank fragment layout -->
+    <include
+        android:id="@+id/transaction_frag_header"
+        layout="@layout/transaction_frag_list_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/transaction_frag_recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
-</FrameLayout>
+</LinearLayout>

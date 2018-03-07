@@ -16,6 +16,11 @@ public class ExchangeData {
     public ExchangeData() {
     }
 
+    public ExchangeData(List<Exchange> exchanges, List<Pair> pairs) {
+        this.exchanges = exchanges;
+        this.pairs = pairs;
+    }
+
     public List<Exchange> getExchanges() {
         return exchanges;
     }

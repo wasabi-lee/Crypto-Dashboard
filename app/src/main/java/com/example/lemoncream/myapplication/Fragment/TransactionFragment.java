@@ -2,9 +2,11 @@ package com.example.lemoncream.myapplication.Fragment;
 
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -13,37 +15,55 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.lemoncream.myapplication.Activity.CoinDetailActivity;
-import com.example.lemoncream.myapplication.Adapter.BagListAdapter;
 import com.example.lemoncream.myapplication.Adapter.TxListAdapter;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceDeserializer;
+import com.example.lemoncream.myapplication.Model.Deserializers.PriceHistoricalDeserializer;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceFull;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceHistorical;
 import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
 import com.example.lemoncream.myapplication.Model.RealmModels.TxHistory;
-import com.example.lemoncream.myapplication.Model.TempModels.BagPriceData;
+import com.example.lemoncream.myapplication.Model.TempModels.PriceParams;
+import com.example.lemoncream.myapplication.Model.TempModels.TxListData;
 import com.example.lemoncream.myapplication.Model.TempModels.TxPriceData;
+import com.example.lemoncream.myapplication.Network.GsonHelper;
+import com.example.lemoncream.myapplication.Network.PriceService;
+import com.example.lemoncream.myapplication.Network.RetrofitHelper;
 import com.example.lemoncream.myapplication.R;
 import com.example.lemoncream.myapplication.Utils.Callbacks.OnUnitToggleListener;
+import com.example.lemoncream.myapplication.Utils.Formatters.NumberFormatter;
+import com.example.lemoncream.myapplication.Utils.Formatters.SignSwitcher;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
+import retrofit2.Retrofit;
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class TransactionFragment extends Fragment {
+public class TransactionFragment extends Fragment implements View.OnClickListener {
 
     private static final String TAG = TransactionFragment.class.getSimpleName();
 
     private OnUnitToggleListener mCallback;
 
     private Realm mRealm;
-    private List<TxPriceData> mDataset;
+    private List<TxListData> mDataset;
     private int mBagId;
     private Bag mCurrentBag;
     private String mFsym, mTsym;
@@ -51,6 +71,18 @@ public class TransactionFragment extends Fragment {
     @BindView(R.id.transaction_frag_recycler_view)
     RecyclerView mTxRecyclerView;
     private TxListAdapter mAdapter;
+
+    @BindView(R.id.tx_frag_header_profit_loss_text)
+    TextView mProfitText;
+    @BindView(R.id.tx_frag_header_total_holdings_text)
+    TextView mHoldingsText;
+    @BindView(R.id.tx_frag_header_info_image_view)
+    ImageView mInfoImageView;
+
+    @BindView(R.id.tx_frag_header_net_cost_text)
+    TextView mCostText;
+    @BindView(R.id.tx_frag_header_market_value_text)
+    TextView mValueText;
 
     private boolean baseCurrencyDisplayMode = false;
     private boolean pctChangeDisplayMode = false;
@@ -78,13 +110,14 @@ public class TransactionFragment extends Fragment {
             unpackInitialData(getArguments());
         } else {
             //TODO Display error message
+            Toast.makeText(getContext(), "Unexpected error occurred. Please try again later.", Toast.LENGTH_SHORT).show();
         }
     }
 
     public void unpackInitialData(Bundle args) {
         if (args != null) {
-            int receivedId = getArguments().getInt(CoinDetailActivity.EXTRA_PAIR_KEY, -1);
-            mCurrentBag = mRealm.where(Bag.class).equalTo("_id", receivedId).findFirst();
+            mBagId = getArguments().getInt(CoinDetailActivity.EXTRA_PAIR_KEY, -1);
+            mCurrentBag = mRealm.where(Bag.class).equalTo("_id", mBagId).findFirst();
             if (mCurrentBag != null && mCurrentBag.getTradePair() != null) {
                 mFsym = mCurrentBag.getTradePair().getfCoin().getSymbol();
                 mTsym = mCurrentBag.getTradePair().gettCoin().getSymbol();
@@ -103,24 +136,30 @@ public class TransactionFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        setListeners();
         // load realm
         loadDataset();
-        // config recyclerview
+        if (mDataset == null || mDataset.size() == 0) return;
+        // config recyclerview, fill it up with realm data
         populateRecyclerView();
-        // fill it up with realm data
         // make an api call. should get price data of specified time at a specified exchange.
-        // realm will give you 1) holdings, 2) time of the transaction, 3) exchange
-        // Observable.zip(index, observable. -> pricehistorical object)
+        requestPriceData(createPriceRequestParams());
+    }
+
+    private void setListeners() {
+        mInfoImageView.setOnClickListener(this);
     }
 
     private void loadDataset() {
         mDataset = new ArrayList<>();
-        RealmResults<TxHistory> txHistories =  mRealm.where(TxHistory.class)
+        RealmResults<TxHistory> txHistories = mRealm.where(TxHistory.class)
                 .equalTo("txHolder._id", mBagId)
-                .sort("date", Sort.ASCENDING)
+                .not()
+                .equalTo("orderType", TxHistory.ORDER_TYPE_WATCH)
+                .sort("date", Sort.DESCENDING)
                 .findAll();
-        for (TxHistory txHistory : txHistories) {
-            mDataset.add(new TxPriceData(txHistory, -1, -1, -1, -1));
+        for (int i = 0; i < txHistories.size(); i++) {
+            mDataset.add(new TxListData(txHistories.get(i), new TxPriceData(i)));
         }
     }
 
@@ -131,18 +170,102 @@ public class TransactionFragment extends Fragment {
             // TODO Show 'add first transaction' message
         } else {
             // Passing only values of the Map as ArrayList to fetch each element easier
-            mAdapter = new TxListAdapter(getContext(), mDataset);
+            mAdapter = new TxListAdapter(getContext(), mDataset, mBagId);
+            mAdapter.setFsym(mFsym);
+            mAdapter.setTsym(mTsym);
+
             mTxRecyclerView.setHasFixedSize(true);
             mTxRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
             mTxRecyclerView.setItemAnimator(new DefaultItemAnimator());
             mTxRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
             mTxRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(()
-                    -> Log.d(TAG, "populateRecyclerView: "));
+                    -> {
+                mHoldingsText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalHoldings()));
+                mValueText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalHoldingsValue()));
+                mCostText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalNetCost()));
+                mProfitText.setText(NumberFormatter.formatProfitDecimals(mAdapter.getTotalProfit()));
+                mProfitText.setTextColor(NumberFormatter.getProfitTextColor(mAdapter.getTotalProfit()));
+
+            });
             mTxRecyclerView.setAdapter(mAdapter);
         }
     }
 
+    private void requestPriceData(ArrayList<PriceParams> params) {
+        Retrofit priceHistoRetrofit = RetrofitHelper.createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
+                GsonHelper.createGsonBuilder(PriceHistorical.class, new PriceHistoricalDeserializer()).create());
+        PriceService priceHistoricalService = priceHistoRetrofit.create(PriceService.class);
+        Retrofit priceCurrentRetrofit = RetrofitHelper.createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
+                GsonHelper.createGsonBuilder(PriceFull.class, new PriceDeserializer()).create());
+        PriceService priceCurrentService = priceCurrentRetrofit.create(PriceService.class);
+
+        if (params != null) {
+            Observable.fromIterable(params)
+                    .flatMap((Function<PriceParams, ObservableSource<?>>) param ->
+                            Observable.zip(Observable.just(param),
+                                    priceCurrentService.getMultipleCurrentPrices(param.getFsym(), param.getTsym(), param.getExchangeName()),
+                                    priceHistoricalService.getHistoricalPrice(param.getTsym(), SignSwitcher.BASE_CURRENCY),
+                                    priceHistoricalService.getHistoricalPrice(param.getTsym(), SignSwitcher.BASE_CURRENCY,
+                                            param.getTimestamp()),
+                                    (currentParam, priceCurrent, priceCurrentBase, priceHistoBase) -> {
+                                        TxPriceData txPriceData = new TxPriceData();
+                                        txPriceData.setPosition(currentParam.getPosition());
+                                        if (priceCurrent != null) txPriceData.setCurrentPrice(priceCurrent.getTsymPriceDetail().getPrice());
+                                        if (priceCurrentBase != null) txPriceData.setCurrentBasePrice(priceCurrentBase.getPrice());
+                                        if (priceHistoBase != null) txPriceData.setPreviousBasePrice(priceHistoBase.getPrice());
+                                        return txPriceData;
+                                    }
+                            )).subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(txPriceData -> {
+                                TxPriceData castedPriceData = (TxPriceData) txPriceData;
+                                mDataset.get(castedPriceData.getPosition())
+                                        .setTxPriceData(castedPriceData);
+                            }, Throwable::printStackTrace,
+                            () -> mAdapter.notifyDataSetChanged());
+        }
+    }
+
+    private ArrayList<PriceParams> createPriceRequestParams() {
+        ArrayList<PriceParams> params = new ArrayList<>();
+        for (int i = 0; i < mDataset.size(); i++) {
+            params.add(new PriceParams(i, mFsym, mTsym,
+                    mDataset.get(i).getTxHistory().getExchange().getName(),
+                    mDataset.get(i).getTxHistory().getDate().getTime() / 1000));
+        }
+        return params;
+    }
+
+    public void togglePriceDisplay(boolean baseCurrencyDisplayMode, boolean pctChangeDisplayMode) {
+        if (mAdapter != null && mTxRecyclerView != null) {
+            mAdapter.setBaseCurrencyDisplayMode(baseCurrencyDisplayMode);
+            mAdapter.setPctChangeDisplayMode(pctChangeDisplayMode);
+            mAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void launchInfoDialog() {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getContext());
+        alertDialogBuilder.setTitle("This information may not be accurate");
+        alertDialogBuilder.setMessage("The historical prices are based on the daily average of the specified dates. " +
+                "These are not calculated in an accurate way. " +
+                "Use this information for your reference only.")
+                .setCancelable(true)
+                .setPositiveButton("GOT IT!", (dialogInterface, i) -> dialogInterface.cancel());
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.tx_frag_header_info_image_view:
+                launchInfoDialog();
+                break;
+        }
+    }
 
     @Override
     public void onDestroy() {

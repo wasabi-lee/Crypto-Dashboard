@@ -17,6 +17,7 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.lemoncream.myapplication.Model.Deserializers.PriceDeserializer;
 import com.example.lemoncream.myapplication.Model.GsonModels.PriceFull;
@@ -229,7 +230,8 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new SingleObserver<PriceFull>() {
                     @Override
-                    public void onSubscribe(Disposable d) {}
+                    public void onSubscribe(Disposable d) {
+                    }
 
                     @Override
                     public void onSuccess(PriceFull priceFull) {
@@ -313,17 +315,25 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void saveThisTxHistory() {
-        TxHistory txHistory = createTxHistoryObject();
-        Realm realm = Realm.getDefaultInstance();
-        realm.executeTransaction(realm1 -> {
-            try {
-                realm1.copyToRealmOrUpdate(txHistory);
-            } catch (RuntimeException e) {
-                e.printStackTrace();
-            } catch (Error e) {
-                e.printStackTrace();
+        //TODO check inputs
+        if (getOrderType().equals(TxHistory.ORDER_TYPE_WATCH)) {
+            if (findBagForThisPair() == null) {
+                mRealm.executeTransaction(realm1 -> realm1.copyToRealmOrUpdate(createTxHistoryObject()));
+            } else {
+                Toast.makeText(this, "This pair is already on your watchlist or portfolio", Toast.LENGTH_SHORT).show();
             }
-        });
+        } else {
+            TxHistory txHistory = createTxHistoryObject();
+            mRealm.executeTransaction(realm1 -> {
+                try {
+                    realm1.copyToRealmOrUpdate(txHistory);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
         // Finish with the result intent.
         Intent intent = new Intent();
         intent.putExtra(SearchCoinActivity.EXTRA_SAVE_SUCCESSFUL_KEY, true);
@@ -335,44 +345,44 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
         TxHistory txHistory = new TxHistory();
         txHistory.set_id(RealmIdAutoIncrementHelper.generateItemId(TxHistory.class, "_id"));
         txHistory.setOrderType(getOrderType());
-        txHistory.setTxHolder(findBagForThisTx()); // TODO FIX HERE LATER
-        txHistory.setAmount(NumberFormatter.convertUserInputIntoFloat(mNewCoinAmountEdit.getText().toString()));
-        txHistory.setTradePrice(NumberFormatter.convertUserInputIntoFloat(mTradePriceEdit.getText().toString()));
+        txHistory.setTxHolder(configBag());
+        txHistory.setAmount(getOrderType().equals(TxHistory.ORDER_TYPE_WATCH) ? 0 : Float.valueOf(mNewCoinAmountEdit.getText().toString()));
+        txHistory.setTradePrice(getOrderType().equals(TxHistory.ORDER_TYPE_WATCH) ? 0 :Float.valueOf(mTradePriceEdit.getText().toString()));
         txHistory.setExchange(mCurrentExchange);
         txHistory.setDate(mSelectedDate);
         txHistory.setDeductFromAnotherBag(mDeductSwitch.isChecked());
         txHistory.setDecutedPair(null); // TODO FIX HERE LATER
+        txHistory.setNote(mNote);
         return txHistory;
     }
 
-    private Bag findBagForThisTx() {
-        Bag foundBag = mRealm.where(Bag.class)
+    private Bag findBagForThisPair() {
+        return mRealm.where(Bag.class)
                 .equalTo("tradePair.pairName", mCurrentPair.getPairName())
-                .findFirst(); // TODO Fix here so that it can query portfolio
+                .findFirst();
+    }
+
+    private Bag configBag() {
+        String orderType = getOrderType();
+        float inputAmount = orderType.equals(TxHistory.ORDER_TYPE_WATCH) ? 0 : Math.abs(Float.valueOf(mNewCoinAmountEdit.getText().toString()));
+        final float newBalance = orderType.equals(TxHistory.ORDER_TYPE_BUY) ? inputAmount : inputAmount * -1;
+        boolean watchOnly = orderType.equals(TxHistory.ORDER_TYPE_WATCH);
+
+        Bag foundBag = findBagForThisPair(); // TODO Fix here so that it can query portfolio
         if (foundBag == null) {
             Bag newBag = new Bag();
             newBag.set_id(RealmIdAutoIncrementHelper.generateItemId(Bag.class, "_id"));
             newBag.setTradePair(mCurrentPair);
-            newBag.setBalance(NumberFormatter.convertUserInputIntoFloat(mNewCoinAmountEdit.getText().toString()));
+            newBag.setBalance(newBalance);
             newBag.setDateAdded(mSelectedDate);
-            newBag.setPortfolio(null); // TODO Null for now
+            newBag.setPortfolio(null);
+            newBag.setWatchOnly(watchOnly);
             return newBag;
         } else {
-            String orderType = getOrderType();
-            float balance = Float.valueOf(mNewCoinAmountEdit.getText().toString());
-
-            if (orderType != null) {
-                mRealm.executeTransaction(realm -> {
-                    float newBalance = 0;
-                    if (orderType.equals(TxHistory.ORDER_TYPE_BUY)) {
-                        newBalance = foundBag.getBalance() + balance;
-                    } else if (orderType.equals(TxHistory.ORDER_TYPE_SELL)) {
-                        newBalance = foundBag.getBalance() - balance;
-                    }
-                    foundBag.setBalance(newBalance);
-                }
-                );
-            }
+            mRealm.executeTransaction(realm -> {
+                foundBag.setBalance(foundBag.getBalance() + newBalance);
+                foundBag.setWatchOnly(watchOnly);
+            });
             return foundBag;
         }
     }
@@ -383,7 +393,7 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
         if (orderType.equals("BUY")) return TxHistory.ORDER_TYPE_BUY;
         if (orderType.equals("SELL")) return TxHistory.ORDER_TYPE_SELL;
         if (orderType.equals("WATCH")) return TxHistory.ORDER_TYPE_WATCH;
-        return null;
+        return TxHistory.ORDER_TYPE_WATCH;
     }
 
     @Override

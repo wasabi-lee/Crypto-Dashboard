@@ -17,6 +17,7 @@ public class Bag extends RealmObject {
     private Date dateAdded;
     private float balance;
     private Portfolio portfolio;
+    private boolean watchOnly;
 
     public Bag() {
     }
@@ -59,5 +60,13 @@ public class Bag extends RealmObject {
 
     public void setPortfolio(Portfolio portfolio) {
         this.portfolio = portfolio;
+    }
+
+    public boolean isWatchOnly() {
+        return watchOnly;
+    }
+
+    public void setWatchOnly(boolean watchOnly) {
+        this.watchOnly = watchOnly;
     }
 }

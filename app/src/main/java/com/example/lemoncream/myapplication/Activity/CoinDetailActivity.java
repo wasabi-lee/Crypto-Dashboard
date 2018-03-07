@@ -28,6 +28,7 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import io.realm.Realm;
+import io.realm.Sort;
 import retrofit2.Retrofit;
 
 public class CoinDetailActivity extends AppCompatActivity implements OnUnitToggleListener {
@@ -44,8 +45,6 @@ public class CoinDetailActivity extends AppCompatActivity implements OnUnitToggl
     private String mFsym;
     private String mTsym;
     private String mExchange;
-
-    private PriceFull mCurrentPriceInfo;
 
     private ViewPagerAdapter mTabLayoutAdapter;
 
@@ -66,7 +65,6 @@ public class CoinDetailActivity extends AppCompatActivity implements OnUnitToggl
 
         initializeData();
         initializeLayout();
-        requestCurrentPrice();
 
     }
 
@@ -79,9 +77,9 @@ public class CoinDetailActivity extends AppCompatActivity implements OnUnitToggl
             mTsym = mCurrentBag.getTradePair().gettCoin().getSymbol();
         }
 
-        TxHistory latestTx = mRealm.where(TxHistory.class)
+         TxHistory latestTx = mRealm.where(TxHistory.class)
                 .equalTo("txHolder.tradePair.pairName", mCurrentBag.getTradePair().getPairName())
-                .findAllSorted("date").last();
+                 .sort("date", Sort.DESCENDING).findFirst();
         if (latestTx == null) return;
         mExchange = latestTx.getExchange().getName();
     }
@@ -99,9 +97,9 @@ public class CoinDetailActivity extends AppCompatActivity implements OnUnitToggl
         alertFragment.setArguments(bundle);
 
         mTabLayoutAdapter = new ViewPagerAdapter(getSupportFragmentManager());
-        mTabLayoutAdapter.addFragment(chartFragment, "Chart");
-        mTabLayoutAdapter.addFragment(txFragment, "Transactions");
-        mTabLayoutAdapter.addFragment(alertFragment, "Alerts");
+        mTabLayoutAdapter.addFragment(ViewPagerAdapter.FRAG_POSITION_CHART, chartFragment, "Chart");
+        mTabLayoutAdapter.addFragment(ViewPagerAdapter.FRAG_POSITION_TRANSACTION, txFragment, "Transactions");
+        mTabLayoutAdapter.addFragment(ViewPagerAdapter.FRAG_POSITION_ALERT,alertFragment, "Alerts");
         mViewPager.setAdapter(mTabLayoutAdapter);
         mTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -124,31 +122,11 @@ public class CoinDetailActivity extends AppCompatActivity implements OnUnitToggl
     public void onUnitToggled(boolean baseCurrencyDisplayMode, boolean pctChangeDisplayMode) {
         this.baseCurrencyDisplayMode = baseCurrencyDisplayMode;
         this.pctChangeDisplayMode = pctChangeDisplayMode;
-        ((ChartFragment) mTabLayoutAdapter.getFragment(mTabLayout.getSelectedTabPosition()))
-                .parseData(mCurrentPriceInfo, this.baseCurrencyDisplayMode, this.pctChangeDisplayMode);
-        //TODO Add tx layout also
+        ((ChartFragment) mTabLayoutAdapter.getFragment(ViewPagerAdapter.FRAG_POSITION_CHART))
+                .parseData(this.baseCurrencyDisplayMode, this.pctChangeDisplayMode);
+        ((TransactionFragment) mTabLayoutAdapter.getFragment(ViewPagerAdapter.FRAG_POSITION_TRANSACTION))
+                .togglePriceDisplay(this.baseCurrencyDisplayMode, this.pctChangeDisplayMode);
     }
 
-    public void requestCurrentPrice() {
-        Retrofit retrofit = RetrofitHelper
-                .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
-                        GsonHelper.createGsonBuilder(PriceFull.class, new PriceDeserializer()).create());
-        Observable<PriceFull> tsymPriceObservable = retrofit.create(PriceService.class).getMultipleCurrentPrices(mFsym, mTsym, mExchange);
-        Observable<PriceFull> baseBtcPriceObservable = retrofit.create(PriceService.class).getMultipleCurrentPrices(mFsym, SignSwitcher.BASE_CURRENCY + ",BTC");
 
-        Observable.zip(tsymPriceObservable, baseBtcPriceObservable, (tsymPrice, baseBtcPrice) -> {
-            tsymPrice.setBasePriceDetail(baseBtcPrice.getBasePriceDetail());
-            tsymPrice.setBtcPriceDetail(baseBtcPrice.getBtcPriceDetail());
-            return tsymPrice;
-        }).subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(price -> {
-                            if (price == null) return;
-                             mCurrentPriceInfo = price;
-                            ((ChartFragment) mTabLayoutAdapter
-                                    .getFragment(mTabLayout.getSelectedTabPosition()))
-                                    .parseData(price, baseCurrencyDisplayMode, pctChangeDisplayMode);
-                        }, Throwable::printStackTrace,
-                        () -> Log.d(TAG, "requestCurrentPrice: onComplete"));
-    }
 }

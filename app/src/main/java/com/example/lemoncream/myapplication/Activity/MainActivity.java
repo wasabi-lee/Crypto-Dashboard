@@ -74,8 +74,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         mAdapter = new ViewPagerAdapter(getSupportFragmentManager());
-        mAdapter.addFragment(new PortfolioFragment(), "Portfolio");
-        mAdapter.addFragment(new WatchlistFragment(), "Watchlist");
+        mAdapter.addFragment(ViewPagerAdapter.FRAG_POSITION_PORTFOLIO, new PortfolioFragment(), "Portfolio");
+        mAdapter.addFragment(ViewPagerAdapter.FRAG_POSITION_WATCHLIST, new WatchlistFragment(), "Watchlist");
         mViewPager.setAdapter(mAdapter);
         mTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -151,17 +151,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
             case R.id.main_portfolio_value_text:
                 baseCurrencyDisplayMode = !baseCurrencyDisplayMode;
-                ((PortfolioFragment) mAdapter.getFragment(mTabLayout.getSelectedTabPosition())).changeDisplayCurrency(baseCurrencyDisplayMode);
+                ((PortfolioFragment) mAdapter.getFragment(ViewPagerAdapter.FRAG_POSITION_PORTFOLIO)).changeDisplayCurrency(baseCurrencyDisplayMode);
+                ((WatchlistFragment) mAdapter.getFragment(ViewPagerAdapter.FRAG_POSITION_WATCHLIST)).changeDisplayCurrency(baseCurrencyDisplayMode);
                 break;
             case R.id.main_portfolio_change_text:
                 pctChangeDisplayMode = !pctChangeDisplayMode;
-                ((PortfolioFragment) mAdapter.getFragment(mTabLayout.getSelectedTabPosition())).changeDisplayChangeUnit(pctChangeDisplayMode);
+                ((PortfolioFragment) mAdapter.getFragment(ViewPagerAdapter.FRAG_POSITION_PORTFOLIO)).changeDisplayChangeUnit(pctChangeDisplayMode);
+                ((WatchlistFragment) mAdapter.getFragment(ViewPagerAdapter.FRAG_POSITION_WATCHLIST)).changeDisplayChangeUnit(baseCurrencyDisplayMode);
                 break;
         }
     }
 
     @Override
     public void onTotalValueChanged(float totalPortfolioValue, float totalPortfolioValue24hr) {
+        Log.d(TAG, "onTotalValueChanged: " + totalPortfolioValue + "," + totalPortfolioValue24hr);
         DecimalFormat df = new DecimalFormat("#,###,###.##");
         String portfolioValueStr = String.valueOf(df.format(totalPortfolioValue));
         portfolioValueStr = baseCurrencyDisplayMode ?

@@ -28,7 +28,7 @@
             android:id="@+id/tx_frag_header_profit_loss_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="$ 23,432,12.02"
+            android:text="-"
             android:textSize="18dp"
             android:textStyle="bold" />
 
@@ -36,7 +36,7 @@
             android:id="@+id/tx_frag_header_total_holdings_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="27.3465 ETH" />
+            android:text="-" />
     </LinearLayout>
     <!-- TODO Change text -->
 
@@ -72,7 +72,7 @@
             android:id="@+id/tx_frag_header_net_cost_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="$ 212.02"
+            android:text="-"
             android:textStyle="bold"/>
     </LinearLayout>
         <!-- TODO Change text -->
@@ -113,7 +113,7 @@
             android:id="@+id/tx_frag_header_market_value_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="$ 23,432,12.02"
+            android:text="-"
             android:textStyle="bold"/>
     </LinearLayout>
     <!-- TODO Change text -->

@@ -19,6 +19,7 @@ public class PriceFull {
      * if the pair doesn't exist for the specified exchange.
      */
 
+    private int position;
     private String fsym;
     private PriceDetail tsymPriceDetail;
     private PriceDetail btcPriceDetail;
@@ -57,5 +58,13 @@ public class PriceFull {
 
     public void setBasePriceDetail(PriceDetail basePriceDetail) {
         this.basePriceDetail = basePriceDetail;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
     }
 }

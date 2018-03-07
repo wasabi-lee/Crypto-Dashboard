@@ -1,6 +1,7 @@
 package com.example.lemoncream.myapplication.Network;
 
 import com.example.lemoncream.myapplication.Model.GsonModels.PriceFull;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceHistorical;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -28,4 +29,15 @@ public interface PriceService {
     Observable<PriceFull> getMultipleCurrentPrices(@Query("fsyms") String fsym,
                                                    @Query("tsyms") String tsyms);
 
+    @GET("data/pricehistorical")
+    Observable<PriceHistorical> getHistoricalPrice(@Query("fsym") String fsym,
+                                                            @Query("tsyms") String tsyms);
+    @GET("data/pricehistorical")
+    Observable<PriceHistorical> getHistoricalPrice(@Query("fsym") String fsym,
+                                                            @Query("tsyms") String tsyms,
+                                                            @Query("ts") long timestamp);
+    @GET("data/pricehistorical")
+    Observable<PriceHistorical> getHistoricalPrice(@Query("fsym") String fsym,
+                                                            @Query("tsyms") String tsyms,
+                                                            @Query("e") String exchange);
 }

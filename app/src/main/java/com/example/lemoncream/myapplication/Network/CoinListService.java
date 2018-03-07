@@ -3,6 +3,8 @@ package com.example.lemoncream.myapplication.Network;
 import com.example.lemoncream.myapplication.Model.GsonModels.CoinData;
 import com.example.lemoncream.myapplication.Model.GsonModels.ExchangeData;
 
+
+import io.reactivex.Observable;
 import retrofit2.Call;
 import retrofit2.http.GET;
 
@@ -12,8 +14,8 @@ import retrofit2.http.GET;
 
 public interface CoinListService {
     @GET("data/all/coinlist")
-    Call<CoinData> requestCoinList();
+    Observable<CoinData> requestCoinList();
 
     @GET("data/all/exchanges")
-    Call<ExchangeData> requestExchangeData();
+    Observable<ExchangeData> requestExchangeData();
 }

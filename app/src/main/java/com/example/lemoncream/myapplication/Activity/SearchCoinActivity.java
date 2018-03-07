@@ -31,8 +31,15 @@ import com.example.lemoncream.myapplication.Network.RetrofitHelper;
 import com.example.lemoncream.myapplication.R;
 import com.example.lemoncream.myapplication.Utils.Database.RealmHelper;
 
+import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import retrofit2.Call;
@@ -55,7 +62,6 @@ public class SearchCoinActivity extends AppCompatActivity
     CoinListAdapter mAdapter;
     ProgressDialog mProgressDialog;
 
-    ExchangeData mExchangeData;
     RealmHelper mRealmHelper;
 
     private String mBaseUrl;
@@ -76,6 +82,7 @@ public class SearchCoinActivity extends AppCompatActivity
         mBaseUrl = getResources().getString(R.string.base_url);
         mRealm = Realm.getDefaultInstance();
         mProgressDialog = new ProgressDialog(SearchCoinActivity.this);
+        mProgressDialog.setCancelable(false);
         mRealmHelper = new RealmHelper(SearchCoinActivity.this);
 
         pullCoinListDB();
@@ -86,7 +93,7 @@ public class SearchCoinActivity extends AppCompatActivity
         long numOfExchanges = mRealm.where(Exchange.class).count();
         if (numOfExchanges == 0) {
             // The DB doesn't exist. Pull initial database from API.
-            requestCoinlistAPI();
+            requestCoinList();
             setProgressDialog("Loading coin data...");
         } else {
             // Populate the RecyclerView with pairs;
@@ -123,76 +130,89 @@ public class SearchCoinActivity extends AppCompatActivity
         mProgressDialog.dismiss();
     }
 
-    public void requestCoinlistAPI() {
-        Retrofit retrofit = RetrofitHelper.createRetrofit(mBaseUrl,
+    public void requestCoinList() {
+        Retrofit coinListRetrofit = RetrofitHelper.createRetrofitWithRxConverter(mBaseUrl,
                 GsonHelper.createGsonBuilder(CoinData.class, new CoinListDeserializer()).create());
-        CoinListService coinListService = retrofit.create(CoinListService.class);
-        final Call<CoinData> coinListCall = coinListService.requestCoinList();
-        coinListCall.enqueue(new Callback<CoinData>() {
-            @Override
-            public void onResponse(Call<CoinData> call, Response<CoinData> response) {
-                // Save coin list
-                if (!response.isSuccessful()) return; // TODO Error message to UI
-                if (response.body() != null) {
-                    mRealmHelper.saveLatestCoinDataToRealm(mRealm, response.body().getCoinList());
-                }
-            }
-            @Override
-            public void onFailure(Call<CoinData> call, Throwable t) {
-                handleError(getResources().getString(R.string.error_message));
-                t.printStackTrace();
-            }
-        });
-    }
+        Retrofit exchangeListRetrofit = RetrofitHelper.createRetrofitWithRxConverter(mBaseUrl,
+                GsonHelper.createGsonBuilder(ExchangeData.class, new ExchangeDataDeserializer()).create());
+        Observable<CoinData> coinListObservable = coinListRetrofit.create(CoinListService.class).requestCoinList();
+        Observable<ExchangeData> exchangeDataObservable = exchangeListRetrofit.create(CoinListService.class).requestExchangeData();
 
-    public void requestExchangePairAPI() {
-        // Call coinlist api and convert it to realm.
-        Retrofit retrofit = RetrofitHelper.createRetrofit(mBaseUrl,
-                GsonHelper.createGsonBuilder(ExchangeData.class, new ExchangeDataDeserializer())
-                        .create());
-        CoinListService coinListService = retrofit.create(CoinListService.class);
-        final Call<ExchangeData> coinListCall = coinListService.requestExchangeData();
-        coinListCall.enqueue(new Callback<ExchangeData>() {
-            @Override
-            public void onResponse(Call<ExchangeData> call, Response<ExchangeData> response) {
-                if (!response.isSuccessful()) {
-                    // TODO add error message to the UI
-                    return;
-                }
-                mExchangeData = response.body();
-                mRealmHelper.syncPairsWithCoinData(mRealm, mExchangeData.getPairs());
-            }
+        coinListObservable.flatMap(coinData -> {
+            mRealmHelper.saveLatestCoinDataToRealm(Realm.getDefaultInstance(), coinData.getCoinList());
+            return exchangeDataObservable.flatMap(exchangeData -> Observable.create(emitter -> {
+                Realm realm = Realm.getDefaultInstance();
+                mRealmHelper.syncPairsWithCoinData(realm, exchangeData.getPairs());
+                emitter.onNext(exchangeData.getExchanges());
+                emitter.onComplete();
+            }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()))
+                    .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(exchanges ->
+                        mRealmHelper.saveLatestPairDataToRealm(Realm.getDefaultInstance(), (List<Exchange>) exchanges));
 
-            @Override
-            public void onFailure(Call<ExchangeData> call, Throwable t) {
-                // TODO add error message to the UI
-                t.printStackTrace();
-                handleError(getResources().getString(R.string.error_message));
-            }
-        });
     }
+//
+//    public void requestCoinlistAPI() {
+//        Retrofit retrofit = RetrofitHelper.createRetrofit(mBaseUrl,
+//                GsonHelper.createGsonBuilder(CoinData.class, new CoinListDeserializer()).create());
+//        CoinListService coinListService = retrofit.create(CoinListService.class);
+//        final Call<CoinData> coinListCall = coinListService.requestCoinList();
+//        coinListCall.enqueue(new Callback<CoinData>() {
+//            @Override
+//            public void onResponse(Call<CoinData> call, Response<CoinData> response) {
+//                // Save coin list
+//                if (!response.isSuccessful()) return; // TODO Error message to UI
+//                if (response.body() != null) {
+//                    mRealmHelper.saveLatestCoinDataToRealm(mRealm, response.body().getCoinList());
+//                }
+//            }
+//            @Override
+//            public void onFailure(Call<CoinData> call, Throwable t) {
+//                handleError(getResources().getString(R.string.error_message));
+//                t.printStackTrace();
+//            }
+//        });
+//    }
+//
+//    public void requestExchangePairAPI() {
+//        // Call coinlist api and convert it to realm.
+//        Retrofit retrofit = RetrofitHelper.createRetrofit(mBaseUrl,
+//                GsonHelper.createGsonBuilder(ExchangeData.class, new ExchangeDataDeserializer())
+//                        .create());
+//        CoinListService coinListService = retrofit.create(CoinListService.class);
+//        final Call<ExchangeData> coinListCall = coinListService.requestExchangeData();
+//        coinListCall.enqueue(new Callback<ExchangeData>() {
+//            @Override
+//            public void onResponse(Call<ExchangeData> call, Response<ExchangeData> response) {
+//                if (!response.isSuccessful()) {
+//                    // TODO add error message to the UI
+//                    return;
+//                }
+//                mExchangeData = response.body();
+//                mRealmHelper.syncPairsWithCoinData(mRealm, mExchangeData.getPairs());
+//            }
+//
+//            @Override
+//            public void onFailure(Call<ExchangeData> call, Throwable t) {
+//                // TODO add error message to the UI
+//                t.printStackTrace();
+//                handleError(getResources().getString(R.string.error_message));
+//            }
+//        });
+//    }
 
-    @Override
-    public void onCoinListTransactionFinished(boolean result) {
-        if (result) {
-            setProgressDialog("Loading trade pairs...");
-            requestExchangePairAPI();
-        } else {
-            handleError(getResources().getString(R.string.error_message));
-        }
-    }
+//    @Override
+//    public void onCoinListTransactionFinished(boolean result) {
+//        if (result) {
+//            setProgressDialog("Loading trade pairs...");
+//            requestExchangePairAPI();
+//        } else {
+//            handleError(getResources().getString(R.string.error_message));
+//        }
+//    }
 
-    @Override
-    public void onPairTransactionFinished(boolean result) {
-        if (result) {
-            //Transaction was successful.
-            mRealmHelper.saveLatestPairDataToRealm(mRealm, mExchangeData);
-            setProgressDialog("Saving the coin list to DB...");
-        } else {
-            // Transaction failed.
-            handleError(getResources().getString(R.string.error_message));
-        }
-    }
 
     @Override
     public void onExchangeTransactionFinished(boolean result) {

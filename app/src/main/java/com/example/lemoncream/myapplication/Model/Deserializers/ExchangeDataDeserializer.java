@@ -1,6 +1,8 @@
 package com.example.lemoncream.myapplication.Model.Deserializers;
 
 
+import android.util.Log;
+
 import com.example.lemoncream.myapplication.Model.GsonModels.ExchangeData;
 import com.example.lemoncream.myapplication.Model.RealmModels.Exchange;
 import com.example.lemoncream.myapplication.Model.RealmModels.Pair;
@@ -36,9 +38,9 @@ public class ExchangeDataDeserializer implements JsonDeserializer {
     @Override
     public Object deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
 
+        Log.d(TAG, "deserialize: start deserializing");
         if (json != null) {
             final JsonObject jsonObject = json.getAsJsonObject();
-            ExchangeData result = new ExchangeData();
             List<Exchange> exchanges = new ArrayList<>();
             List<Pair> pairs;
             HashMap<String, Pair> temp_pairs = new HashMap<>();
@@ -69,11 +71,15 @@ public class ExchangeDataDeserializer implements JsonDeserializer {
                 }
             }
             pairs = new ArrayList<>(temp_pairs.values());
+            ExchangeData result = new ExchangeData();
             result.setExchanges(exchanges);
             result.setPairs(pairs);
+            Log.d(TAG, "deserialize: returning result");
             return result;
+        } else {
+            Log.d(TAG, "deserialize: returning null");
+            return null;
         }
-        return null;
     }
 
 

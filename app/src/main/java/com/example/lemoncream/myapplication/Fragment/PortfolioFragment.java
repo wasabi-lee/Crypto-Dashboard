@@ -15,10 +15,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.example.lemoncream.myapplication.Adapter.BagListAdapter;
 import com.example.lemoncream.myapplication.Model.Deserializers.PriceDeserializer;
 import com.example.lemoncream.myapplication.Model.GsonModels.PriceFull;
+import com.example.lemoncream.myapplication.Model.RealmModels.Exchange;
 import com.example.lemoncream.myapplication.Model.RealmModels.TxHistory;
 import com.example.lemoncream.myapplication.Model.TempModels.BagPriceData;
 import com.example.lemoncream.myapplication.Model.TempModels.PriceParams;
@@ -32,6 +34,7 @@ import com.example.lemoncream.myapplication.Utils.Formatters.SignSwitcher;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -54,7 +57,6 @@ public class PortfolioFragment extends Fragment {
 
     private static final String TAG = PortfolioFragment.class.getSimpleName();
 
-    private OnTotalValueChangedListener mCallback;
 
     private boolean mFirstRun = true;
 
@@ -65,8 +67,7 @@ public class PortfolioFragment extends Fragment {
     @BindView(R.id.portfolio_frag_progress_bar)
     ProgressBar mProgressBar;
 
-
-    private LinkedHashMap<String, BagPriceData> mDataset;
+    private ArrayList<BagPriceData> mDataset;
 
     private BagListAdapter mAdapter;
     private Realm mRealm;
@@ -76,15 +77,6 @@ public class PortfolioFragment extends Fragment {
         // Required empty public constructor
     }
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        try {
-            mCallback = (OnTotalValueChangedListener) context;
-        } catch (ClassCastException e) {
-                throw new ClassCastException(context.toString()
-                        + " must implement OnUnitChangedListener");}
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -98,53 +90,61 @@ public class PortfolioFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Log.d(TAG, "onViewCreated: ");
         mRealm = Realm.getDefaultInstance();
+
         populateBagList(loadBagData());
         requestPriceData(createPriceApiCallParams());
-
     }
 
 
-    private LinkedHashMap<String, BagPriceData> loadBagData() {
+    private ArrayList<BagPriceData> loadBagData() {
         mProgressBar.setVisibility(View.VISIBLE);
-        return createDataset(mRealm.where(Bag.class).findAll());
+        return createDataset(mRealm.where(Bag.class).equalTo("watchOnly", false).findAll());
     }
 
-    private LinkedHashMap<String, BagPriceData> createDataset(RealmResults<Bag> bags) {
+    private ArrayList<BagPriceData> createDataset(RealmResults<Bag> bags) {
         // Using LinkedHashMap to keep the order of elements due to the complexity of the API response design.
-        LinkedHashMap<String, BagPriceData> dataset = new LinkedHashMap<>();
+        if (bags.size() == 0) {
+            mProgressBar.setVisibility(View.GONE);
+            return null;
+        }
+        ArrayList<BagPriceData> dataset = new ArrayList<>();
         for (Bag bag : bags) {
             if (bag == null || bag.getTradePair() == null) continue;
-            String pairName = bag.getTradePair().getPairName();
-            dataset.put(pairName, new BagPriceData(bag, null));
+//            String pairName = bag.getTradePair().getPairName();
+            dataset.add(new BagPriceData(bag, null));
         }
         mDataset = dataset;
         return dataset;
     }
 
 
-    private void populateBagList(LinkedHashMap<String, BagPriceData> dataset) {
+    private void populateBagList(ArrayList<BagPriceData> dataset) {
         if (dataset == null) {
             // TODO Show error message
         } else if (dataset.size() == 0) {
             // TODO Show 'add first transaction' message
         } else {
             // Passing only values of the Map as ArrayList to fetch each element easier
-            mAdapter = new BagListAdapter(getContext(), new ArrayList<>(dataset.values()));
+            mAdapter = new BagListAdapter(getContext(), dataset);
             mBagRecyclerView.setHasFixedSize(true);
             mBagRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
             mBagRecyclerView.setItemAnimator(new DefaultItemAnimator());
             mBagRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-            mBagRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(()
-                    -> mCallback.onTotalValueChanged(mAdapter.getTotalPortfolioValue(), mAdapter.getTotalPortfolioValue24hr()));
             mBagRecyclerView.setAdapter(mAdapter);
         }
     }
 
     private void requestPriceData(ArrayList<PriceParams> params) {
-        if (params == null) return;
+        if (mDataset == null || mDataset.size() == 0) {
+            mProgressBar.setVisibility(View.GONE);
+            return;
+        }
+        if (params == null || params.size() == 0) {
+            mProgressBar.setVisibility(View.GONE);
+            return;
+        }
 
         Retrofit retrofitTsym = RetrofitHelper
                 .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
@@ -152,75 +152,73 @@ public class PortfolioFragment extends Fragment {
         PriceService currentPriceService = retrofitTsym.create(PriceService.class);
 
         Observable.fromIterable(params)
-                .flatMap((Function<PriceParams, ObservableSource<?>>) priceParams -> {
-                    Observable<PriceFull> tsymPriceObservable = currentPriceService
-                            .getMultipleCurrentPrices(priceParams.getFsym(),
-                                    priceParams.getTsym(),
-                                    priceParams.getExchangeName());
-                    Observable<PriceFull> baseBtcPriceObservable = currentPriceService
-                            .getMultipleCurrentPrices(priceParams.getFsym(),
-                                    SignSwitcher.BASE_CURRENCY.toUpperCase() + ",BTC");
-                    return Observable.zip(tsymPriceObservable, baseBtcPriceObservable, (tsymPrice, baseBtcPrice) -> {
-                        tsymPrice.setBasePriceDetail(baseBtcPrice.getBasePriceDetail());
-                        tsymPrice.setBtcPriceDetail(baseBtcPrice.getBtcPriceDetail());
-                        return tsymPrice;
-                    });
-                })
+                .flatMap((Function<PriceParams, ObservableSource<?>>) priceParams ->
+                        Observable.zip(Observable.just(priceParams),
+                                currentPriceService.getMultipleCurrentPrices(priceParams.getFsym(),
+                                        priceParams.getTsym(),
+                                        priceParams.getExchangeName()),
+                                currentPriceService.getMultipleCurrentPrices(priceParams.getFsym(),
+                                        SignSwitcher.BASE_CURRENCY.toUpperCase() + ",BTC"),
+                                (param, tsymPrice, baseBtcPrice) -> {
+                                    tsymPrice.setPosition(param.getPosition());
+                                    tsymPrice.setBasePriceDetail(baseBtcPrice.getBasePriceDetail());
+                                    tsymPrice.setBtcPriceDetail(baseBtcPrice.getBtcPriceDetail());
+                                    return tsymPrice;
+                                }))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Object>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                    }
-
-                    @Override
-                    public void onNext(Object o) {
-                        PriceFull priceFull = (PriceFull) o;
-                        String pairName = priceFull.getFsym() + "_" + priceFull.getTsymPriceDetail().getTsym();
-                        BagPriceData dataToFix = mDataset.get(pairName);
-                        dataToFix.setTsymPriceDetail(priceFull.getTsymPriceDetail());
-                        dataToFix.setBasePriceDetail(priceFull.getBasePriceDetail());
-                        dataToFix.setBtcPriceDetail(priceFull.getBtcPriceDetail());
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        Log.d(TAG, "onComplete: ");
-                        mProgressBar.setVisibility(View.GONE);
-                        mAdapter.setData(new ArrayList<>(mDataset.values()));
-                        mAdapter.notifyDataSetChanged();
-                    }
-                });
+                .subscribe(priceResponse -> {
+                            PriceFull priceFull = (PriceFull) priceResponse;
+                            BagPriceData dataToFix = mDataset.get(priceFull.getPosition());
+                            dataToFix.setTsymPriceDetail(priceFull.getTsymPriceDetail());
+                            dataToFix.setBasePriceDetail(priceFull.getBasePriceDetail());
+                            dataToFix.setBtcPriceDetail(priceFull.getBtcPriceDetail());
+                        },
+                        Throwable::printStackTrace,
+                        () -> {
+                            mProgressBar.setVisibility(View.GONE);
+                            mAdapter.setData(mDataset);
+                            mAdapter.notifyDataSetChanged();
+                        });
     }
 
     private ArrayList<PriceParams> createPriceApiCallParams() {
+        if (mDataset == null || mDataset.size() == 0) return null;
+
         ArrayList<PriceParams> params = new ArrayList<>();
-        for (BagPriceData data : mDataset.values()) {
+        for (int i = 0; i < mDataset.size(); i++) {
+            BagPriceData data = mDataset.get(i);
             if (data == null) continue;
             String fsym = data.getBag().getTradePair().getfCoin().getSymbol();
             String tsyms = data.getBag().getTradePair().gettCoin().getSymbol(); //TODO Fix this to Base currency later
-            String exchange = mRealm.where(TxHistory.class)
+            RealmResults<TxHistory> exchangeList = mRealm.where(TxHistory.class)
                     .equalTo("txHolder.tradePair.pairName", data.getBag().getTradePair().getPairName())
-                    .findAllSorted("date")
-                    .last().getExchange().getName(); // Getting the latest exchange that has been added
-            params.add(new PriceParams(fsym, tsyms, exchange));
+                    .findAllSorted("date");
+            if (exchangeList == null || exchangeList.size() == 0) return null;
+            String exchange = exchangeList.last().getExchange().getName();
+
+            params.add(new PriceParams(i, fsym, tsyms, exchange));
         }
         return params;
     }
 
     public void changeDisplayCurrency(boolean baseCurrencyDisplayMode) {
-        mAdapter.setBaseCurrencyDisplayMode(baseCurrencyDisplayMode);
-        mAdapter.notifyDataSetChanged();
+        try {
+            mAdapter.setBaseCurrencyDisplayMode(baseCurrencyDisplayMode);
+            mAdapter.notifyDataSetChanged();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), getResources().getString(R.string.error_message), Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void changeDisplayChangeUnit(boolean pctChangeDisplayMode) {
-        mAdapter.setPctChangeDisplayMode(pctChangeDisplayMode);
-        mAdapter.notifyDataSetChanged();
+        try {
+            mAdapter.setPctChangeDisplayMode(pctChangeDisplayMode);
+            mAdapter.notifyDataSetChanged();
+        } catch (NullPointerException e) {
+            Toast.makeText(getContext(), getResources().getString(R.string.error_message), Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -231,7 +229,11 @@ public class PortfolioFragment extends Fragment {
         if (mFirstRun) {
             mFirstRun = false;
         } else {
-            loadBagData();
+            if (mAdapter == null) {
+                populateBagList(loadBagData());
+            } else {
+                loadBagData();
+            }
             requestPriceData(createPriceApiCallParams());
         }
     }

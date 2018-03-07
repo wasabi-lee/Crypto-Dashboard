@@ -21,6 +21,7 @@ public class TxHistory extends RealmObject {
     private Date date;
     private boolean deductFromAnotherBag;
     private Pair decutedPair;
+    private String note;
 
     public static final String ORDER_TYPE_BUY = "order_buy";
     public static final String ORDER_TYPE_SELL = "order_sell";
@@ -101,16 +102,12 @@ public class TxHistory extends RealmObject {
         this.decutedPair = decutedPair;
     }
 
-    @Override
-    public String toString() {
-        return "TxHistory - _id: " + _id
-                + " orderType: " + orderType
-                + " txHolder: " + " null for now " //TODO Fix
-                + " amount: " + amount
-                + " tradePrice: " + tradePrice
-                + " exchange: " + exchange.getName()
-                + " date" + date.toLocaleString()
-                + " deductFromAnotherBag: " + deductFromAnotherBag
-                + " deductPair: " +  " null for now "; //TODO Fix this
+    public String getNote() {
+        return note;
     }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
 }
