@@ -22,7 +22,10 @@ import io.realm.Realm;
 public class ChangeExchangeActivity extends AppCompatActivity implements ExchangeSelectionCallback {
 
     private static final String TAG = ChangeExchangeActivity.class.getSimpleName();
-    public static final String EXTRA_EXCHANGE_KEY = "extra_exchange_key";
+    public static final String EXTRA_PAIR_NAME_KEY = "extra_exchange_key";
+    public static final String EXTRA_ACTIVITY_KEY = "extra_activity_key";
+
+    public String mPrevActivityName = "";
 
     @BindView(R.id.change_exchange_list)
     RecyclerView mExchangeRecyclerView;
@@ -36,9 +39,15 @@ public class ChangeExchangeActivity extends AppCompatActivity implements Exchang
         setContentView(R.layout.activity_change_exchange);
         ButterKnife.bind(this);
 
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
         mRealm = Realm.getDefaultInstance();
+        mPrevActivityName = getIntent().getStringExtra(EXTRA_ACTIVITY_KEY);
         mCurrentPair = mRealm.where(Pair.class)
-                .equalTo("pairName", getIntent().getStringExtra(EXTRA_EXCHANGE_KEY))
+                .equalTo("pairName", getIntent().getStringExtra(EXTRA_PAIR_NAME_KEY))
                 .findFirst();
 
         if (mCurrentPair != null && mCurrentPair.getExchanges() != null) populateExchangeList();
@@ -55,11 +64,23 @@ public class ChangeExchangeActivity extends AppCompatActivity implements Exchang
         mExchangeRecyclerView.setAdapter(mAdapter);
     }
 
+    private String getPrevActivityResultKey() {
+        switch (mPrevActivityName) {
+            case "new_coin":
+                return NewCoinActivity.EXTRA_RESULT_EXCHANGE_KEY;
+            case "new_alert":
+                return NewAlertActivity.EXTRA_RESULT_EXCHANGE_KEY;
+            default:
+                return "";
+        }
+    }
+
     @Override
     public void onExchangeSelected(Exchange exchange) {
+        String extraKey = getPrevActivityResultKey();
+        if (extraKey.isEmpty()) return;
         Intent intent = new Intent();
-        Log.d(TAG, "onExchangeSelected: " + exchange.getName());
-        intent.putExtra(NewCoinActivity.EXTRA_RESULT_EXCHANGE_KEY, exchange.getName());
+        intent.putExtra(extraKey, exchange.getName());
         setResult(RESULT_OK, intent);
         finish();
     }

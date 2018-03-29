@@ -2,6 +2,7 @@ package com.example.lemoncream.myapplication.Network;
 
 import com.example.lemoncream.myapplication.Model.GsonModels.PriceFull;
 import com.example.lemoncream.myapplication.Model.GsonModels.PriceHistorical;
+import com.example.lemoncream.myapplication.Model.GsonModels.PriceSimple;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -15,6 +16,13 @@ import retrofit2.http.Query;
 public interface PriceService {
     //https://min-api.cryptocompare.com/data/pricehistorical?fsym=ETH&tsyms=BTC,USD,EUR&ts=1452680400&extraParams=your_app_name
     //https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC,ETH&tsyms=USD,EUR&e=Coinbase&extraParams=your_app_name
+    //https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=BTC,USD,EUR
+
+    @GET("data/price")
+    Observable<PriceSimple> getSingleSimplePrice(@Query("fsym") String fsym,
+                                                 @Query("tsyms") String tsyms,
+                                                 @Query("e") String exchange);
+
     @GET("data/pricemultifull")
     Single<PriceFull> getSingleCurrentPrice(@Query("fsyms") String fsym,
                                             @Query("tsyms") String tsyms,

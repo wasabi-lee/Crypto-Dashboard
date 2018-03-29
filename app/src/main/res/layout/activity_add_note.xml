@@ -25,7 +25,7 @@
         android:background="@null"
         android:gravity="top|start"
         android:hint="Add a new note..."
-        android:inputType="textCapCharacters|textMultiLine"
+        android:inputType="textMultiLine"
         app:layout_constraintTop_toBottomOf="@id/add_note_toolbar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

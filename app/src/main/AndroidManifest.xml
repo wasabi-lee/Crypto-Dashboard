@@ -3,6 +3,7 @@
     package="com.example.lemoncream.myapplication">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:name=".Application.PortfolioTracker"
@@ -28,7 +29,7 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".Activity.SearchCoinActivity"
-            android:label="Add a new coin"
+            android:label="Search"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.app.searchable"
@@ -36,13 +37,30 @@
         </activity>
         <activity
             android:name=".Activity.NewCoinActivity"
-            android:label="@string/title_activity_new_coin"
+            android:label="Add a new transaction"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateHidden" />
+        <activity
+            android:name=".Activity.NewAlertActivity"
+            android:label="Create a new alert"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateHidden" />
+        <activity
+            android:name=".Activity.ChangeExchangeActivity"
+            android:label="Available Exchanges"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".Activity.NewAlertActivity" />
-        <activity android:name=".Activity.ChangeExchangeActivity" />
         <activity
             android:name=".Activity.AddNoteActivity"
+            android:label="Note"
             android:theme="@style/AppTheme.NoActionBar" />
+
+        <service
+            android:name=".Background.AlertService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

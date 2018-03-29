@@ -23,7 +23,6 @@ public class RealmHelper {
     private static final String TAG = RealmHelper.class.getSimpleName();
 
     public interface RealmTransactionListener {
-
         void onExchangeTransactionFinished(boolean result);
     }
 

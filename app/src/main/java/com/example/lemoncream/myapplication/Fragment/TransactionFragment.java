@@ -60,6 +60,8 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
 
     private static final String TAG = TransactionFragment.class.getSimpleName();
 
+    private boolean mFirstRun = true;
+
     private OnUnitToggleListener mCallback;
 
     private Realm mRealm;
@@ -139,6 +141,7 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
         setListeners();
         // load realm
         loadDataset();
+        setWatchType();
         if (mDataset == null || mDataset.size() == 0) return;
         // config recyclerview, fill it up with realm data
         populateRecyclerView();
@@ -163,33 +166,32 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
         }
     }
 
+    private void setWatchType() {
+        if (mDataset == null) return;
+        boolean isThisBagWatchOnly = mDataset.size() == 0;
+        mRealm.executeTransaction(realm -> mCurrentBag.setWatchOnly(isThisBagWatchOnly));
+    }
+
     private void populateRecyclerView() {
-        if (mDataset == null) {
-            // TODO Show error message
-        } else if (mDataset.size() == 0) {
-            // TODO Show 'add first transaction' message
-        } else {
-            // Passing only values of the Map as ArrayList to fetch each element easier
-            mAdapter = new TxListAdapter(getContext(), mDataset, mBagId);
-            mAdapter.setFsym(mFsym);
-            mAdapter.setTsym(mTsym);
+        mAdapter = new TxListAdapter(getContext(), mDataset, mBagId);
+        mAdapter.setFsym(mFsym);
+        mAdapter.setTsym(mTsym);
 
-            mTxRecyclerView.setHasFixedSize(true);
-            mTxRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
-            mTxRecyclerView.setItemAnimator(new DefaultItemAnimator());
-            mTxRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        mTxRecyclerView.setHasFixedSize(true);
+        mTxRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
+        mTxRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        mTxRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-            mTxRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(()
-                    -> {
-                mHoldingsText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalHoldings()));
-                mValueText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalHoldingsValue()));
-                mCostText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalNetCost()));
-                mProfitText.setText(NumberFormatter.formatProfitDecimals(mAdapter.getTotalProfit()));
-                mProfitText.setTextColor(NumberFormatter.getProfitTextColor(mAdapter.getTotalProfit()));
+        mTxRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(()
+                -> {
+            mHoldingsText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalHoldings()) + " " + mFsym);
+            mValueText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalHoldingsValue()));
+            mCostText.setText(NumberFormatter.formatDecimals(mAdapter.getTotalNetCost()));
+            mProfitText.setText(NumberFormatter.formatProfitDecimals(mAdapter.getTotalProfit()));
+            mProfitText.setTextColor(NumberFormatter.getProfitTextColor(mAdapter.getTotalProfit()));
 
-            });
-            mTxRecyclerView.setAdapter(mAdapter);
-        }
+        });
+        mTxRecyclerView.setAdapter(mAdapter);
     }
 
     private void requestPriceData(ArrayList<PriceParams> params) {
@@ -211,9 +213,12 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
                                     (currentParam, priceCurrent, priceCurrentBase, priceHistoBase) -> {
                                         TxPriceData txPriceData = new TxPriceData();
                                         txPriceData.setPosition(currentParam.getPosition());
-                                        if (priceCurrent != null) txPriceData.setCurrentPrice(priceCurrent.getTsymPriceDetail().getPrice());
-                                        if (priceCurrentBase != null) txPriceData.setCurrentBasePrice(priceCurrentBase.getPrice());
-                                        if (priceHistoBase != null) txPriceData.setPreviousBasePrice(priceHistoBase.getPrice());
+                                        if (priceCurrent != null)
+                                            txPriceData.setCurrentPrice(priceCurrent.getTsymPriceDetail().getPrice());
+                                        if (priceCurrentBase != null)
+                                            txPriceData.setCurrentBasePrice(priceCurrentBase.getPrice());
+                                        if (priceHistoBase != null)
+                                            txPriceData.setPreviousBasePrice(priceHistoBase.getPrice());
                                         return txPriceData;
                                     }
                             )).subscribeOn(Schedulers.io())
@@ -222,8 +227,14 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
                                 TxPriceData castedPriceData = (TxPriceData) txPriceData;
                                 mDataset.get(castedPriceData.getPosition())
                                         .setTxPriceData(castedPriceData);
-                            }, Throwable::printStackTrace,
-                            () -> mAdapter.notifyDataSetChanged());
+                            }, throwable -> {
+                                throwable.printStackTrace();
+                                mAdapter.notifyDataSetChanged();
+                            },
+                            () -> {
+                                mAdapter.setmData(mDataset);
+                                mAdapter.notifyDataSetChanged();
+                            });
         }
     }
 
@@ -264,6 +275,24 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
             case R.id.tx_frag_header_info_image_view:
                 launchInfoDialog();
                 break;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mFirstRun) {
+            mFirstRun = false;
+        } else {
+            if (mAdapter == null) {
+                loadDataset();
+                setWatchType();
+                populateRecyclerView();
+            } else {
+                loadDataset();
+                setWatchType();
+            }
+            requestPriceData(createPriceRequestParams());
         }
     }
 

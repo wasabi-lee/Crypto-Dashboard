@@ -21,6 +21,7 @@ import com.example.lemoncream.myapplication.R;
 import com.example.lemoncream.myapplication.Fragment.WatchlistFragment;
 import com.example.lemoncream.myapplication.Utils.Callbacks.OnTotalValueChangedListener;
 import com.example.lemoncream.myapplication.Utils.Formatters.SignSwitcher;
+import com.example.lemoncream.myapplication.Utils.Notification.NotificationUtils;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
@@ -64,6 +65,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mToolbar.setTitle("");
         setSupportActionBar(mToolbar);
 
+        NotificationUtils notificationUtils = new NotificationUtils();
+        notificationUtils.createChannel(this);
+
         mPortfolioValueText.setOnClickListener(this);
         mPortfolioChangeText.setOnClickListener(this);
 
@@ -81,18 +85,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 mViewPager.setCurrentItem(tab.getPosition());
-                Log.d(TAG, "onTabSelected: " + mViewPager.getAdapter().getPageTitle(tab.getPosition()));
             }
 
             @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-
-            }
+            public void onTabUnselected(TabLayout.Tab tab) {}
 
             @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-
-            }
+            public void onTabReselected(TabLayout.Tab tab) {}
         });
         mTabLayout.setupWithViewPager(mViewPager);
 

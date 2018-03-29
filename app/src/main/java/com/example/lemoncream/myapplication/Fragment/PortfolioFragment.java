@@ -103,15 +103,14 @@ public class PortfolioFragment extends Fragment {
     }
 
     private ArrayList<BagPriceData> createDataset(RealmResults<Bag> bags) {
-        // Using LinkedHashMap to keep the order of elements due to the complexity of the API response design.
-        if (bags.size() == 0) {
-            mProgressBar.setVisibility(View.GONE);
-            return null;
-        }
         ArrayList<BagPriceData> dataset = new ArrayList<>();
+        if (bags.size() == 0) { // the realm query result is never null
+            mProgressBar.setVisibility(View.GONE);
+            mDataset = dataset;
+            return dataset;
+        }
         for (Bag bag : bags) {
             if (bag == null || bag.getTradePair() == null) continue;
-//            String pairName = bag.getTradePair().getPairName();
             dataset.add(new BagPriceData(bag, null));
         }
         mDataset = dataset;
@@ -120,20 +119,12 @@ public class PortfolioFragment extends Fragment {
 
 
     private void populateBagList(ArrayList<BagPriceData> dataset) {
-        if (dataset == null) {
-            // TODO Show error message
-        } else if (dataset.size() == 0) {
-            // TODO Show 'add first transaction' message
-        } else {
-            // Passing only values of the Map as ArrayList to fetch each element easier
-            mAdapter = new BagListAdapter(getContext(), dataset);
-            mBagRecyclerView.setHasFixedSize(true);
-            mBagRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
-            mBagRecyclerView.setItemAnimator(new DefaultItemAnimator());
-            mBagRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-
-            mBagRecyclerView.setAdapter(mAdapter);
-        }
+        mAdapter = new BagListAdapter(getContext(), dataset);
+        mBagRecyclerView.setHasFixedSize(true);
+        mBagRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
+        mBagRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        mBagRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        mBagRecyclerView.setAdapter(mAdapter);
     }
 
     private void requestPriceData(ArrayList<PriceParams> params) {
@@ -225,7 +216,6 @@ public class PortfolioFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: ");
         if (mFirstRun) {
             mFirstRun = false;
         } else {
@@ -238,9 +228,4 @@ public class PortfolioFragment extends Fragment {
         }
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        Log.d(TAG, "onPause: ");
-    }
 }

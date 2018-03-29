@@ -97,15 +97,14 @@ public class WatchlistFragment extends Fragment {
     }
 
     private ArrayList<BagPriceData> createDataset(RealmResults<Bag> bags) {
-        // Using LinkedHashMap to keep the order of elements due to the complexity of the API response design.
+        ArrayList<BagPriceData> dataset = new ArrayList<>();
         if (bags.size() == 0) {
             mProgressBar.setVisibility(View.GONE);
-            return null;
+            mDataset = dataset;
+            return dataset;
         }
-        ArrayList<BagPriceData> dataset = new ArrayList<>();
         for (Bag bag : bags) {
             if (bag == null || bag.getTradePair() == null) continue;
-//            String pairName = bag.getTradePair().getPairName();
             dataset.add(new BagPriceData(bag, null));
         }
         mDataset = dataset;
@@ -114,29 +113,20 @@ public class WatchlistFragment extends Fragment {
 
 
     private void populateBagList(ArrayList<BagPriceData> dataset) {
-        if (dataset == null) {
-            // TODO Show error message
-        } else if (dataset.size() == 0) {
-            // TODO Show 'add first transaction' message
-        } else {
-            // Passing only values of the Map as ArrayList to fetch each element easier
-            mAdapter = new BagListAdapter(getContext(), mDataset);
-            mWatchlistRecyclerView.setHasFixedSize(true);
-            mWatchlistRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
-            mWatchlistRecyclerView.setItemAnimator(new DefaultItemAnimator());
-            mWatchlistRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-
-            mWatchlistRecyclerView.setAdapter(mAdapter);
-        }
+        mAdapter = new BagListAdapter(getContext(), dataset);
+        mWatchlistRecyclerView.setHasFixedSize(true);
+        mWatchlistRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
+        mWatchlistRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        mWatchlistRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        mWatchlistRecyclerView.setAdapter(mAdapter);
     }
 
+
     private void requestPriceData(ArrayList<PriceParams> params) {
-        if (mDataset == null || mDataset.size() == 0) {
+        if (mDataset == null) return;
+        if (params == null || mDataset.size() == 0 || params.size() == 0) {
             mProgressBar.setVisibility(View.GONE);
-            return;
-        }
-        if (params == null || params.size() == 0) {
-            mProgressBar.setVisibility(View.GONE);
+            populateBagList(mDataset);
             return;
         }
 

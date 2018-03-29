@@ -16,6 +16,7 @@ import butterknife.ButterKnife;
 public class AddNoteActivity extends AppCompatActivity {
 
     private static final String TAG = AddNoteActivity.class.getSimpleName();
+    public static final String EXTRA_NOTE_KEY = "extra_note_key";
 
     @BindView(R.id.add_note_toolbar)
     Toolbar mToolbar;
@@ -34,6 +35,9 @@ public class AddNoteActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
+
+        String note = getIntent().getStringExtra(EXTRA_NOTE_KEY);
+        if (note != null) mNoteEdit.setText(note);
     }
 
     @Override

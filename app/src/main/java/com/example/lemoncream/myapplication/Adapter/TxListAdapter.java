@@ -1,6 +1,8 @@
 package com.example.lemoncream.myapplication.Adapter;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -9,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.example.lemoncream.myapplication.Activity.NewCoinActivity;
 import com.example.lemoncream.myapplication.Fragment.TransactionFragment;
 import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
 import com.example.lemoncream.myapplication.Model.RealmModels.TxHistory;
@@ -118,20 +121,25 @@ public class TxListAdapter extends RecyclerView.Adapter<TxListAdapter.ViewHolder
         holder.profitText.setText(profitStr);
         holder.profitText.setTextColor(NumberFormatter.getProfitTextColor(profit));
 
-
-        holder.layout.setOnLongClickListener(view -> {
-            Realm.getDefaultInstance().executeTransaction(realm -> {
-                realm.where(TxHistory.class).equalTo("_id", currentTx.get_id()).findAll().deleteAllFromRealm();
-                mData.remove(position);
-                if (mData.size() == 0) {
-                    resetTotalData();
-                    Bag currentBag = realm.where(Bag.class).equalTo("_id", mBagId).findFirst();
-                    if (currentBag != null) currentBag.setWatchOnly(true);
-                }
-            });
-            notifyDataSetChanged();
-            return true;
+        holder.layout.setOnClickListener(view -> {
+            Intent intent = new Intent(mContext, NewCoinActivity.class);
+            intent.putExtra(NewCoinActivity.EXTRA_TX_KEY, currentTx.get_id());
+            mContext.startActivity(intent);
         });
+
+//        holder.layout.setOnLongClickListener(view -> {
+//            Realm.getDefaultInstance().executeTransaction(realm -> {
+//                realm.where(TxHistory.class).equalTo("_id", currentTx.get_id()).findAll().deleteAllFromRealm();
+//                mData.remove(position);
+//                if (mData.size() == 0) {
+//                    resetTotalData();
+//                    Bag currentBag = realm.where(Bag.class).equalTo("_id", mBagId).findFirst();
+//                    if (currentBag != null) currentBag.setWatchOnly(true);
+//                }
+//            });
+//            notifyDataSetChanged();
+//            return true;
+//        });
     }
 
     private void resetTotalData() {

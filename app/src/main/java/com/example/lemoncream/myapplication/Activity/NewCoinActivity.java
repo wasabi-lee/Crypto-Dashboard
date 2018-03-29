@@ -3,6 +3,7 @@ package com.example.lemoncream.myapplication.Activity;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
@@ -40,17 +41,17 @@ import java.util.Date;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.reactivex.Single;
-import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import io.realm.Realm;
+import io.realm.RealmResults;
 import retrofit2.Retrofit;
 
 public class NewCoinActivity extends AppCompatActivity implements View.OnClickListener, View.OnFocusChangeListener {
 
     private static String TAG = NewCoinActivity.class.getSimpleName();
     public static String EXTRA_PAIR_KEY = "extra_pair_key";
+    public static String EXTRA_TX_KEY = "extra_bag_key";
     public static String EXTRA_RESULT_EXCHANGE_KEY = "extra_exchange_key";
     public static String EXTRA_RESULT_NOTE_KEY = "extra_note_key";
 
@@ -95,6 +96,9 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
     TextView mNotePreviewText;
 
     private Realm mRealm;
+    private boolean editMode = false;
+    private Bag mCurrentBag;
+    private TxHistory mCurrentTx;
     private Pair mCurrentPair;
     private Exchange mCurrentExchange;
     private Date mSelectedDate;
@@ -142,7 +146,7 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                onUserInputChanged(s.toString(), mNewCoinAmountEdit.getText().toString());
+                calculateTotalValue(s.toString(), mNewCoinAmountEdit.getText().toString());
             }
         });
         mNewCoinAmountEdit.setOnFocusChangeListener(this);
@@ -157,7 +161,7 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                onUserInputChanged(s.toString(), mTradePriceEdit.getText().toString());
+                calculateTotalValue(s.toString(), mTradePriceEdit.getText().toString());
             }
         });
 
@@ -167,25 +171,74 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
 
 
     private void parseInitialData() {
-        unpackPairDetails();
-        setActivityTitle();
-        setCurrentExchangeName();
-        setTodaysDate();
+        try {
+            unpackPairDetails();
+            setActivityTitle();
+            setCurrentExchangeName();
+            setDate();
+
+            if (editMode) {
+                setOrderTypeOption();
+                setPriceOptionDetails();
+                setAdditionalDetails();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, getResources().getString(R.string.error_message), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void unpackPairDetails() {
-        String receivedPairKey = getIntent().getStringExtra(EXTRA_PAIR_KEY);
-        mCurrentPair = mRealm.where(Pair.class).equalTo("pairName", receivedPairKey).findFirst();
-        if (mCurrentPair.getExchanges() != null && mCurrentPair.getExchanges().size() > 0) {
-            mCurrentExchange = mCurrentPair.getExchanges().get(0);
+        int receivedBagId = getIntent().getIntExtra(EXTRA_TX_KEY, -1);
+
+        if (receivedBagId == -1) {
+            // new coin mode
+            editMode = false;
+            String receivedPairKey = getIntent().getStringExtra(EXTRA_PAIR_KEY);
+            mCurrentPair = mRealm.where(Pair.class).equalTo("pairName", receivedPairKey).findFirst();
+            if (mCurrentPair.getExchanges() != null && mCurrentPair.getExchanges().size() > 0) {
+                mCurrentExchange = mCurrentPair.getExchanges().get(0);
+            }
+        } else {
+            // edit mode
+            editMode = true;
+            mCurrentTx = mRealm.where(TxHistory.class).equalTo("_id", receivedBagId).findFirst();
+            mCurrentBag = mCurrentTx.getTxHolder();
+            mCurrentPair = mCurrentBag.getTradePair();
+            mCurrentExchange = mCurrentTx.getExchange();
         }
+    }
+
+    private void setOrderTypeOption() {
+        String orderType = mCurrentTx.getOrderType();
+        if (orderType.equals(TxHistory.ORDER_TYPE_BUY))
+            ((RadioButton) findViewById(R.id.new_coin_radio_buy)).setChecked(true);
+        if (orderType.equals(TxHistory.ORDER_TYPE_SELL))
+            ((RadioButton) findViewById(R.id.new_coin_radio_sell)).setChecked(true);
+        if (orderType.equals(TxHistory.ORDER_TYPE_WATCH))
+            ((RadioButton) findViewById(R.id.new_coin_radio_watch)).setChecked(true);
+    }
+
+    private void setPriceOptionDetails() {
+        String tradePriceStr = NumberFormatter.formatDecimals(mCurrentTx.getTradePrice());
+        String amountStr = NumberFormatter.formatDecimals(mCurrentTx.getAmount());
+        mTradePriceEdit.setText(tradePriceStr);
+        mNewCoinAmountEdit.setText(amountStr);
+        calculateTotalValue(tradePriceStr, amountStr);
+    }
+
+    private void setAdditionalDetails() {
+        mDeductSwitch.setChecked(mCurrentTx.isDeductFromAnotherBag());
+        mNotePreviewText.setText(mCurrentTx.getNote());
+        mNote = mCurrentTx.getNote();
     }
 
     private void setActivityTitle() {
         String title = "-";
         if (mCurrentPair != null) {
-            String[] pairData = getIntent().getStringExtra(EXTRA_PAIR_KEY).split("_");
-            title = "Add a " + pairData[0] + "/" + pairData[1] + " transaction";
+            String[] pairData = mCurrentPair.getPairName().split("_");
+            title = pairData[0] + "/" + pairData[1] + " transaction";
         }
         mToolbar.setTitle(title);
     }
@@ -197,15 +250,14 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
         mExchangeText.setText(exchange);
     }
 
-    private void setTodaysDate() {
-        Date todaysDate = Calendar.getInstance().getTime();
-        mSelectedDate = todaysDate;
-        String formattedDate = DateFormat.getDateInstance().format(todaysDate);
+    private void setDate() {
+        mSelectedDate = editMode ? mCurrentTx.getDate() : Calendar.getInstance().getTime();
+        String formattedDate = DateFormat.getDateInstance().format(mSelectedDate);
         mDateText.setText(formattedDate);
     }
 
 
-    private void onUserInputChanged(String firstParam, String secondParam) {
+    private void calculateTotalValue(String firstParam, String secondParam) {
         float firstParamFloat = NumberFormatter.convertUserInputIntoFloat(firstParam);
         if (firstParamFloat < 0) {
             mTradePriceEdit.setText(0);
@@ -228,28 +280,14 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
 
         priceRequest.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleObserver<PriceFull>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                    }
-
-                    @Override
-                    public void onSuccess(PriceFull priceFull) {
-                        parsePriceData(priceFull);
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                    }
-                });
+                .subscribe(this::parsePriceData);
     }
 
     private void parsePriceData(PriceFull priceFull) {
         if (priceFull != null) {
             Float currentPrice = priceFull.getTsymPriceDetail().getPrice();
             mCurrentPriceText.setText(String.valueOf(mDecimalFormat.format(currentPrice)));
-            mTradePriceEdit.setHint(String.valueOf(mDecimalFormat.format(currentPrice)));
+            mTradePriceEdit.setHint(String.valueOf(NumberFormatter.formatDecimals(currentPrice)));
         }
     }
 
@@ -270,7 +308,8 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
             case R.id.new_coin_main_linearLayout_1:
                 // Change exchange
                 Intent intent = new Intent(this, ChangeExchangeActivity.class);
-                intent.putExtra(ChangeExchangeActivity.EXTRA_EXCHANGE_KEY, mCurrentPair.getPairName());
+                intent.putExtra(ChangeExchangeActivity.EXTRA_ACTIVITY_KEY, "new_coin");
+                intent.putExtra(ChangeExchangeActivity.EXTRA_PAIR_NAME_KEY, mCurrentPair.getPairName());
                 startActivityForResult(intent, REQUEST_CODE_EXCHANGE);
                 break;
             case R.id.new_coin_main_linearLayout_5:
@@ -279,7 +318,9 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
                 break;
             case R.id.new_coin_misc_linearLayout_2:
                 // Add note;
-                startActivityForResult(new Intent(this, AddNoteActivity.class), REQUEST_CODE_NOTE);
+                Intent noteIntent = new Intent(this, AddNoteActivity.class);
+                noteIntent.putExtra(AddNoteActivity.EXTRA_NOTE_KEY, mNote);
+                startActivityForResult(noteIntent, REQUEST_CODE_NOTE);
                 break;
         }
     }
@@ -315,15 +356,20 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void saveThisTxHistory() {
-        //TODO check inputs
+        int id = mCurrentTx == null ? -1 : mCurrentTx.get_id();
+
         if (getOrderType().equals(TxHistory.ORDER_TYPE_WATCH)) {
             if (findBagForThisPair() == null) {
-                mRealm.executeTransaction(realm1 -> realm1.copyToRealmOrUpdate(createTxHistoryObject()));
+                mRealm.executeTransaction(realm1 -> realm1.copyToRealmOrUpdate(createTxHistoryObject(id)));
             } else {
                 Toast.makeText(this, "This pair is already on your watchlist or portfolio", Toast.LENGTH_SHORT).show();
             }
         } else {
-            TxHistory txHistory = createTxHistoryObject();
+            if (!checkIfValidInput()) {
+                Toast.makeText(this, "Please enter valid input", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            TxHistory txHistory = createTxHistoryObject(id);
             mRealm.executeTransaction(realm1 -> {
                 try {
                     realm1.copyToRealmOrUpdate(txHistory);
@@ -341,25 +387,39 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
         finish();
     }
 
-    private TxHistory createTxHistoryObject() {
+    private boolean checkIfValidInput() {
+        // Input is valid when both the price edit / amount edit are filled AND when the amount edit value is not 0.
+        return !mTradePriceEdit.getText().toString().isEmpty() &&
+                !mNewCoinAmountEdit.getText().toString().isEmpty() &&
+                NumberFormatter.convertUserInputIntoFloat(mNewCoinAmountEdit.getText().toString()) != 0;
+    }
+
+    private TxHistory createTxHistoryObject(int id) {
+
+        if (id == -1) id = RealmIdAutoIncrementHelper.generateItemId(TxHistory.class, "_id");
+
         TxHistory txHistory = new TxHistory();
-        txHistory.set_id(RealmIdAutoIncrementHelper.generateItemId(TxHistory.class, "_id"));
+        txHistory.set_id(id);
         txHistory.setOrderType(getOrderType());
         txHistory.setTxHolder(configBag());
-        txHistory.setAmount(getOrderType().equals(TxHistory.ORDER_TYPE_WATCH) ? 0 : Float.valueOf(mNewCoinAmountEdit.getText().toString()));
-        txHistory.setTradePrice(getOrderType().equals(TxHistory.ORDER_TYPE_WATCH) ? 0 :Float.valueOf(mTradePriceEdit.getText().toString()));
+        txHistory.setAmount(getOrderType().equals(TxHistory.ORDER_TYPE_WATCH) ? 0 :
+                NumberFormatter.convertUserInputIntoFloat(mNewCoinAmountEdit.getText().toString()));
+        txHistory.setTradePrice(getOrderType().equals(TxHistory.ORDER_TYPE_WATCH) ? 0 :
+                NumberFormatter.convertUserInputIntoFloat(mTradePriceEdit.getText().toString()));
         txHistory.setExchange(mCurrentExchange);
         txHistory.setDate(mSelectedDate);
         txHistory.setDeductFromAnotherBag(mDeductSwitch.isChecked());
         txHistory.setDecutedPair(null); // TODO FIX HERE LATER
         txHistory.setNote(mNote);
+
         return txHistory;
     }
 
     private Bag findBagForThisPair() {
-        return mRealm.where(Bag.class)
-                .equalTo("tradePair.pairName", mCurrentPair.getPairName())
-                .findFirst();
+        return mCurrentBag != null ? mCurrentBag :
+                mRealm.where(Bag.class)
+                        .equalTo("tradePair.pairName", mCurrentPair.getPairName())
+                        .findFirst();
     }
 
     private Bag configBag() {
@@ -380,8 +440,12 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
             return newBag;
         } else {
             mRealm.executeTransaction(realm -> {
-                foundBag.setBalance(foundBag.getBalance() + newBalance);
-                foundBag.setWatchOnly(watchOnly);
+                // If this is in the edit mode, delete the initial balance from the total bag holdings
+                // and add the new balance to it.
+                float startingBalance = foundBag.getBalance();
+                if (editMode) startingBalance += (mCurrentTx.getAmount() * -1);
+                foundBag.setBalance(startingBalance + newBalance);
+                if (foundBag.isWatchOnly()) foundBag.setWatchOnly(watchOnly);
             });
             return foundBag;
         }
@@ -396,6 +460,39 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
         return TxHistory.ORDER_TYPE_WATCH;
     }
 
+    private void deleteThisTxHistory() {
+        mRealm.executeTransaction(realm -> {
+            mCurrentBag.setBalance(mCurrentBag.getBalance() + (mCurrentTx.getAmount() * -1));
+            mCurrentTx.deleteFromRealm();
+            finish();
+        });
+    }
+
+
+    private void showDiscardWarningDialog() {
+        AlertDialog alertDialog = new AlertDialog.Builder(NewCoinActivity.this).create();
+        alertDialog.setTitle("Exit?");
+        alertDialog.setMessage("The current edit will be discarded");
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialogInterface, i) -> {
+            dialogInterface.dismiss();
+            finish();
+        });
+        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "CANCEL", (dialogInterface, i) -> dialogInterface.dismiss());
+        alertDialog.show();
+    }
+
+    private void showDeletionWarningDialog() {
+        AlertDialog alertDialog = new AlertDialog.Builder(NewCoinActivity.this).create();
+        alertDialog.setTitle("Delete?");
+        alertDialog.setMessage("This transaction history will be deleted");
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (dialogInterface, i) -> {
+            dialogInterface.dismiss();
+            deleteThisTxHistory();
+        });
+        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "CANCEL", (dialogInterface, i) -> dialogInterface.dismiss());
+        alertDialog.show();
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -405,7 +502,13 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_new_coin, menu);
+        if (!editMode) menu.findItem(R.id.menu_new_coin_delete).setVisible(false);
         return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        showDiscardWarningDialog();
     }
 
     @Override
@@ -418,6 +521,8 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
                 //TODO Save new tx history
                 saveThisTxHistory();
                 return true;
+            case R.id.menu_new_coin_delete:
+                showDeletionWarningDialog();
             default:
                 return super.onOptionsItemSelected(item);
         }
