@@ -153,66 +153,6 @@ public class SearchCoinActivity extends AppCompatActivity
                         mRealmHelper.saveLatestPairDataToRealm(Realm.getDefaultInstance(), (List<Exchange>) exchanges));
 
     }
-//
-//    public void requestCoinlistAPI() {
-//        Retrofit retrofit = RetrofitHelper.createRetrofit(mBaseUrl,
-//                GsonHelper.createGsonBuilder(CoinData.class, new CoinListDeserializer()).create());
-//        CoinListService coinListService = retrofit.create(CoinListService.class);
-//        final Call<CoinData> coinListCall = coinListService.requestCoinList();
-//        coinListCall.enqueue(new Callback<CoinData>() {
-//            @Override
-//            public void onResponse(Call<CoinData> call, Response<CoinData> response) {
-//                // Save coin list
-//                if (!response.isSuccessful()) return; // TODO Error message to UI
-//                if (response.body() != null) {
-//                    mRealmHelper.saveLatestCoinDataToRealm(mRealm, response.body().getCoinList());
-//                }
-//            }
-//            @Override
-//            public void onFailure(Call<CoinData> call, Throwable t) {
-//                handleError(getResources().getString(R.string.error_message));
-//                t.printStackTrace();
-//            }
-//        });
-//    }
-//
-//    public void requestExchangePairAPI() {
-//        // Call coinlist api and convert it to realm.
-//        Retrofit retrofit = RetrofitHelper.createRetrofit(mBaseUrl,
-//                GsonHelper.createGsonBuilder(ExchangeData.class, new ExchangeDataDeserializer())
-//                        .create());
-//        CoinListService coinListService = retrofit.create(CoinListService.class);
-//        final Call<ExchangeData> coinListCall = coinListService.requestExchangeData();
-//        coinListCall.enqueue(new Callback<ExchangeData>() {
-//            @Override
-//            public void onResponse(Call<ExchangeData> call, Response<ExchangeData> response) {
-//                if (!response.isSuccessful()) {
-//                    // TODO add error message to the UI
-//                    return;
-//                }
-//                mExchangeData = response.body();
-//                mRealmHelper.syncPairsWithCoinData(mRealm, mExchangeData.getPairs());
-//            }
-//
-//            @Override
-//            public void onFailure(Call<ExchangeData> call, Throwable t) {
-//                // TODO add error message to the UI
-//                t.printStackTrace();
-//                handleError(getResources().getString(R.string.error_message));
-//            }
-//        });
-//    }
-
-//    @Override
-//    public void onCoinListTransactionFinished(boolean result) {
-//        if (result) {
-//            setProgressDialog("Loading trade pairs...");
-//            requestExchangePairAPI();
-//        } else {
-//            handleError(getResources().getString(R.string.error_message));
-//        }
-//    }
-
 
     @Override
     public void onExchangeTransactionFinished(boolean result) {

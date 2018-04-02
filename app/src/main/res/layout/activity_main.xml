@@ -25,7 +25,7 @@
             app:toolbarId="@+id/toolbar"
             app:titleEnabled="false">
 
-            <com.github.mikephil.charting.charts.LineChart
+            <com.example.lemoncream.myapplication.CustomViews.PriceLineChart
             android:id="@+id/main_line_chart"
             android:layout_width="match_parent"
             android:layout_height="250dp"

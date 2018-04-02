@@ -44,6 +44,7 @@ import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 import io.realm.Realm;
+import io.realm.RealmList;
 import io.realm.RealmResults;
 import retrofit2.Retrofit;
 
@@ -440,11 +441,10 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
             return newBag;
         } else {
             mRealm.executeTransaction(realm -> {
-                // If this is in the edit mode, delete the initial balance from the total bag holdings
+                // If this is in the edit mode, delete the initial input amount from the total bag holdings
                 // and add the new balance to it.
                 float startingBalance = foundBag.getBalance();
-                if (editMode) startingBalance += (mCurrentTx.getAmount() * -1);
-                foundBag.setBalance(startingBalance + newBalance);
+                foundBag.setBalance(editMode ? startingBalance + (newBalance * 2) : startingBalance + newBalance);
                 if (foundBag.isWatchOnly()) foundBag.setWatchOnly(watchOnly);
             });
             return foundBag;
@@ -462,8 +462,28 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
 
     private void deleteThisTxHistory() {
         mRealm.executeTransaction(realm -> {
-            mCurrentBag.setBalance(mCurrentBag.getBalance() + (mCurrentTx.getAmount() * -1));
+            float balanceToDeduct = mCurrentTx.getOrderType().equals(TxHistory.ORDER_TYPE_BUY) ?
+                    mCurrentTx.getAmount() * -1 : mCurrentTx.getAmount();
+            mCurrentBag.setBalance(mCurrentBag.getBalance() + balanceToDeduct);
             mCurrentTx.deleteFromRealm();
+
+            RealmResults<TxHistory> remainingTxs = realm.where(TxHistory.class)
+                    .equalTo("txHolder._id", mCurrentBag.get_id())
+                    .findAll();
+
+            if (remainingTxs.size() == 0) {
+                // Delete the bag if there's no transactions under it.
+                mCurrentBag.deleteFromRealm();
+            } else {
+                // If there's any active transaction (buy/sell order), set watchOnly to false.
+                // If there's none, set it to true.
+                RealmResults<TxHistory> activeOrderTxs = remainingTxs.where()
+                        .equalTo("orderType", TxHistory.ORDER_TYPE_BUY)
+                        .or()
+                        .equalTo("orderType", TxHistory.ORDER_TYPE_SELL)
+                        .findAll();
+                mCurrentBag.setWatchOnly(activeOrderTxs.size() == 0);
+            }
             finish();
         });
     }
@@ -518,7 +538,6 @@ public class NewCoinActivity extends AppCompatActivity implements View.OnClickLi
                 onBackPressed();
                 return true;
             case R.id.menu_new_coin_done:
-                //TODO Save new tx history
                 saveThisTxHistory();
                 return true;
             case R.id.menu_new_coin_delete:

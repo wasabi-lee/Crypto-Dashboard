@@ -57,7 +57,7 @@ public class NotificationUtils {
         return new NotificationCompat.Builder(context, ALERT_NOTIFICATION_CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(body)
-                .setSmallIcon(R.drawable.ic_action_line_chart) // TODO Change icon
+                .setSmallIcon(R.drawable.ic_action_line_chart)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(false);
     }

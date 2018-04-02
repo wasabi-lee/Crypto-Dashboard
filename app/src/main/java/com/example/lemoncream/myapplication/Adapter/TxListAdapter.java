@@ -126,20 +126,6 @@ public class TxListAdapter extends RecyclerView.Adapter<TxListAdapter.ViewHolder
             intent.putExtra(NewCoinActivity.EXTRA_TX_KEY, currentTx.get_id());
             mContext.startActivity(intent);
         });
-
-//        holder.layout.setOnLongClickListener(view -> {
-//            Realm.getDefaultInstance().executeTransaction(realm -> {
-//                realm.where(TxHistory.class).equalTo("_id", currentTx.get_id()).findAll().deleteAllFromRealm();
-//                mData.remove(position);
-//                if (mData.size() == 0) {
-//                    resetTotalData();
-//                    Bag currentBag = realm.where(Bag.class).equalTo("_id", mBagId).findFirst();
-//                    if (currentBag != null) currentBag.setWatchOnly(true);
-//                }
-//            });
-//            notifyDataSetChanged();
-//            return true;
-//        });
     }
 
     private void resetTotalData() {

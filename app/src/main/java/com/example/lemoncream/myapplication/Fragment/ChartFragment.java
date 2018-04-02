@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.lemoncream.myapplication.Activity.CoinDetailActivity;
 import com.example.lemoncream.myapplication.Adapter.ViewPagerAdapter;
@@ -131,7 +132,7 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
         if (getArguments() != null) {
             unpackInitialData(getArguments());
         } else {
-            //TODO Display error message
+            Toast.makeText(getContext(), "Unexpected error occurred. Please try again later.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -200,8 +201,10 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
         Retrofit retrofit = RetrofitHelper
                 .createRetrofitWithRxConverter(getResources().getString(R.string.base_url),
                         GsonHelper.createGsonBuilder(PriceFull.class, new PriceDeserializer()).create());
-        Observable<PriceFull> tsymPriceObservable = retrofit.create(PriceService.class).getMultipleCurrentPrices(mFsym, mTsym, mExchange);
-        Observable<PriceFull> baseBtcPriceObservable = retrofit.create(PriceService.class).getMultipleCurrentPrices(mFsym, SignSwitcher.BASE_CURRENCY + ",BTC");
+        Observable<PriceFull> tsymPriceObservable =
+                retrofit.create(PriceService.class).getMultipleCurrentPrices(mFsym, mTsym, mExchange);
+        Observable<PriceFull> baseBtcPriceObservable =
+                retrofit.create(PriceService.class).getMultipleCurrentPrices(mFsym, SignSwitcher.BASE_CURRENCY + ",BTC");
 
         Observable.zip(tsymPriceObservable, baseBtcPriceObservable, (tsymPrice, baseBtcPrice) -> {
             tsymPrice.setBasePriceDetail(baseBtcPrice.getBasePriceDetail());
@@ -240,10 +243,10 @@ public class ChartFragment extends Fragment implements View.OnClickListener, Rad
         ArrayList<CandleEntry> yVals = new ArrayList<>();
         int numOfBars = mTimeframeSettings.get(mCurrentTimeframe).getNumOfBars();
         for (int i = data.size() - 1; i >= (data.size() - numOfBars); i--) {
-            Datum curruntData = data.get(i);
+            Datum currentData = data.get(i);
             yVals.add(0, new CandleEntry(i,
-                    curruntData.getHigh(), curruntData.getLow(),
-                    curruntData.getOpen(), curruntData.getClose()));
+                    currentData.getHigh(), currentData.getLow(),
+                    currentData.getOpen(), currentData.getClose()));
         }
         populateCandleStickChart(yVals);
     }

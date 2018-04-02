@@ -67,7 +67,6 @@ public class AlertFragment extends Fragment implements View.OnClickListener, Ale
         if (getArguments() != null) {
             unpackInitialData(getArguments());
         } else {
-            //TODO Display error message
             Toast.makeText(getContext(), "Unexpected error occurred. Please try again later.", Toast.LENGTH_SHORT).show();
         }
     }

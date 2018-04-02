@@ -111,7 +111,6 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
         if (getArguments() != null) {
             unpackInitialData(getArguments());
         } else {
-            //TODO Display error message
             Toast.makeText(getContext(), "Unexpected error occurred. Please try again later.", Toast.LENGTH_SHORT).show();
         }
     }
@@ -141,7 +140,6 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
         setListeners();
         // load realm
         loadDataset();
-        setWatchType();
         if (mDataset == null || mDataset.size() == 0) return;
         // config recyclerview, fill it up with realm data
         populateRecyclerView();
@@ -164,12 +162,6 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
         for (int i = 0; i < txHistories.size(); i++) {
             mDataset.add(new TxListData(txHistories.get(i), new TxPriceData(i)));
         }
-    }
-
-    private void setWatchType() {
-        if (mDataset == null) return;
-        boolean isThisBagWatchOnly = mDataset.size() == 0;
-        mRealm.executeTransaction(realm -> mCurrentBag.setWatchOnly(isThisBagWatchOnly));
     }
 
     private void populateRecyclerView() {
@@ -202,7 +194,7 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
                 GsonHelper.createGsonBuilder(PriceFull.class, new PriceDeserializer()).create());
         PriceService priceCurrentService = priceCurrentRetrofit.create(PriceService.class);
 
-        if (params != null) {
+        if (params != null && params.size() != 0) {
             Observable.fromIterable(params)
                     .flatMap((Function<PriceParams, ObservableSource<?>>) param ->
                             Observable.zip(Observable.just(param),
@@ -235,6 +227,9 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
                                 mAdapter.setmData(mDataset);
                                 mAdapter.notifyDataSetChanged();
                             });
+        } else if (params.size() == 0) {
+            mAdapter.setmData(mDataset);
+            mAdapter.notifyDataSetChanged();
         }
     }
 
@@ -286,11 +281,9 @@ public class TransactionFragment extends Fragment implements View.OnClickListene
         } else {
             if (mAdapter == null) {
                 loadDataset();
-                setWatchType();
                 populateRecyclerView();
             } else {
                 loadDataset();
-                setWatchType();
             }
             requestPriceData(createPriceRequestParams());
         }

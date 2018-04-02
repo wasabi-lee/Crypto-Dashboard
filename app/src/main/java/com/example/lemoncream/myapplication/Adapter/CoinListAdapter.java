@@ -77,12 +77,6 @@ public class CoinListAdapter extends RecyclerView.Adapter<CoinListAdapter.ViewHo
         final String pairName = currentPair.getfCoin().getName() + ": " + currentPair.getfCoin().getSymbol() + "/" + currentPair.gettCoin().getSymbol();
         holder.pairTextView.setText(pairName);
         holder.setPairName(currentPair.getPairName());
-//        holder.pairTextView.setOnClickListener(view -> {
-//            Context context = view.getContext();
-//            Intent intent = new Intent(context, NewCoinActivity.class);
-//            intent.putExtra(NewCoinActivity.EXTRA_PAIR_KEY, currentPair.getPairName());
-//            context.startActivity(intent);
-//        });
     }
 
     public void performFiltering(CharSequence constraint) {

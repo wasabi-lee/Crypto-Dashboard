@@ -128,12 +128,14 @@ public class PortfolioFragment extends Fragment {
     }
 
     private void requestPriceData(ArrayList<PriceParams> params) {
-        if (mDataset == null || mDataset.size() == 0) {
+        if (mDataset == null || params == null) {
             mProgressBar.setVisibility(View.GONE);
             return;
         }
-        if (params == null || params.size() == 0) {
+        if (mDataset.size() == 0 || params.size() == 0) {
             mProgressBar.setVisibility(View.GONE);
+            mAdapter.setData(mDataset);
+            mAdapter.notifyDataSetChanged();
             return;
         }
 
@@ -164,6 +166,7 @@ public class PortfolioFragment extends Fragment {
                             dataToFix.setTsymPriceDetail(priceFull.getTsymPriceDetail());
                             dataToFix.setBasePriceDetail(priceFull.getBasePriceDetail());
                             dataToFix.setBtcPriceDetail(priceFull.getBtcPriceDetail());
+                            mDataset.set(priceFull.getPosition(), dataToFix);
                         },
                         Throwable::printStackTrace,
                         () -> {
@@ -174,14 +177,15 @@ public class PortfolioFragment extends Fragment {
     }
 
     private ArrayList<PriceParams> createPriceApiCallParams() {
-        if (mDataset == null || mDataset.size() == 0) return null;
-
         ArrayList<PriceParams> params = new ArrayList<>();
+
+        if (mDataset == null) return params;
+
         for (int i = 0; i < mDataset.size(); i++) {
             BagPriceData data = mDataset.get(i);
             if (data == null) continue;
             String fsym = data.getBag().getTradePair().getfCoin().getSymbol();
-            String tsyms = data.getBag().getTradePair().gettCoin().getSymbol(); //TODO Fix this to Base currency later
+            String tsyms = data.getBag().getTradePair().gettCoin().getSymbol() + "," + SignSwitcher.getBaseCurrencySign(); //TODO Fix this to Base currency later
             RealmResults<TxHistory> exchangeList = mRealm.where(TxHistory.class)
                     .equalTo("txHolder.tradePair.pairName", data.getBag().getTradePair().getPairName())
                     .findAllSorted("date");

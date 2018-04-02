@@ -90,6 +90,7 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
             totalPortfolioValue24hr = 0;
         }
 
+        // ----------------------------------- Unpacking data ---------------------------------------
         BagPriceData currentData = data.get(position);
         Bag currentBag = currentData.getBag();
         String fSym = currentBag.getTradePair().getfCoin().getSymbol();
@@ -124,6 +125,9 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
                 (baseCurrencyDisplayMode ? changePct24hrBase : changePct24hr) :
                 (baseCurrencyDisplayMode ? change24hrBase : change24hr);
 
+
+        // ----------------------------------- Parsing data ---------------------------------------
+
         holder.mPairText.setText(pairName);
 
         if (currentBag.isWatchOnly()) {
@@ -136,6 +140,7 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
         } else {
             if (currentData.getTsymPriceDetail() != null && currentData.getBasePriceDetail() != null && currentData.getBtcPriceDetail() != null) {
                 float holdings = currentBag.getBalance();
+
                 float holdingsValue = baseCurrencyDisplayMode ? priceCurrentBase * holdings : (fSym.equals("BTC") ? holdings : priceCurrentBtc * holdings);
                 float holdingsValue24hrAgo = baseCurrencyDisplayMode ? priceBase24hr * holdings : priceBtc24hr * holdings;
 
@@ -158,7 +163,7 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
             Log.d(TAG, "onBindViewHolder: " + (currentBag.isWatchOnly() ? "WATCH " : "PORTFOLIO ") + position + ":"  + fSymImageUrl);
             Picasso.with(mContext)
                     .load(mBaseUrl + fSymImageUrl)
-                    .resize(40, 40)
+                    .resize(50, 50)
                     .centerCrop()
                     .into(holder.mCoinLogo);
 
@@ -166,15 +171,6 @@ public class BagListAdapter extends RecyclerView.Adapter<BagListAdapter.ViewHold
                 Intent intent = new Intent(mContext, CoinDetailActivity.class);
                 intent.putExtra(CoinDetailActivity.EXTRA_PAIR_KEY, currentBag.get_id());
                 mContext.startActivity(intent);
-            });
-
-            holder.layout.setOnLongClickListener(view -> {
-                Realm.getDefaultInstance().executeTransaction(realm -> {
-                    realm.where(Bag.class).equalTo("_id", currentBag.get_id()).findAll().deleteAllFromRealm();
-                    data.remove(position);
-                });
-                notifyDataSetChanged();
-                return true;
             });
 
         if (!currentBag.isWatchOnly() && position == data.size()-1) {

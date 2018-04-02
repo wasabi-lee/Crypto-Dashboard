@@ -1,6 +1,7 @@
 package com.example.lemoncream.myapplication.Model.RealmModels;
 
 import io.realm.RealmObject;
+import io.realm.RealmResults;
 import io.realm.annotations.PrimaryKey;
 
 /**
@@ -35,5 +36,12 @@ public class Portfolio extends RealmObject {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+
+    // Overriding toString() to let the Spinner ArrayAdapter read the name for its dropdown list value
+    @Override
+    public String toString() {
+        return name;
     }
 }

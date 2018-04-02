@@ -16,12 +16,17 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.example.lemoncream.myapplication.Adapter.ViewPagerAdapter;
+import com.example.lemoncream.myapplication.CustomViews.PriceLineChart;
 import com.example.lemoncream.myapplication.Fragment.PortfolioFragment;
+import com.example.lemoncream.myapplication.Model.RealmModels.Bag;
+import com.example.lemoncream.myapplication.Model.RealmModels.Portfolio;
 import com.example.lemoncream.myapplication.R;
 import com.example.lemoncream.myapplication.Fragment.WatchlistFragment;
 import com.example.lemoncream.myapplication.Utils.Callbacks.OnTotalValueChangedListener;
+import com.example.lemoncream.myapplication.Utils.ChartData.MainPriceChartFetcher;
 import com.example.lemoncream.myapplication.Utils.Formatters.SignSwitcher;
 import com.example.lemoncream.myapplication.Utils.Notification.NotificationUtils;
+import com.example.lemoncream.myapplication.Utils.Settings.SharedPreferenceManager;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
@@ -33,8 +38,13 @@ import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.realm.Realm;
+import io.realm.RealmResults;
+import io.realm.Sort;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnTotalValueChangedListener {
+
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     @BindView(R.id.toolbar)
     Toolbar mToolbar;
@@ -45,13 +55,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @BindView(R.id.main_view_pager)
     ViewPager mViewPager;
     @BindView(R.id.main_line_chart)
-    LineChart mLineChart;
+    PriceLineChart mLineChart;
     @BindView(R.id.main_portfolio_value_text)
     TextView mPortfolioValueText;
     @BindView(R.id.main_portfolio_change_text)
     TextView mPortfolioChangeText;
 
-    private static final String TAG = MainActivity.class.getSimpleName();
+    private int mCurrentPortfolioId = 0;
+
+    private boolean mFirstRun = true;
+    private Realm mRealm;
+    private MainPriceChartFetcher mFetcher;
+
     private ViewPagerAdapter mAdapter;
     private boolean baseCurrencyDisplayMode = false;
     private boolean pctChangeDisplayMode = false;
@@ -62,21 +77,73 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        initToolbar();
+        initSharedPref();
+        initNotificationChannel();
+        initRaelm();
+        initFragments();
+        initChart();
+        initChartFetcher();
+        initSpinner();
+        setListeners();
+
+    }
+
+
+    public void initToolbar() {
         mToolbar.setTitle("");
         setSupportActionBar(mToolbar);
+    }
 
+    private void initSharedPref() {
+        mCurrentPortfolioId = SharedPreferenceManager
+                .getIntSharedPref(this, getString(R.string.shared_pref_file_key),
+                        getString(R.string.shared_pref_portfolio_id_key), 0);
+    }
+
+    public void initNotificationChannel() {
         NotificationUtils notificationUtils = new NotificationUtils();
         notificationUtils.createChannel(this);
+    }
 
+    public void initRaelm() {
+        mRealm = Realm.getDefaultInstance();
+    }
+
+    public void initChart() {
+        mLineChart.initChart();
+    }
+
+    public void setListeners() {
         mPortfolioValueText.setOnClickListener(this);
         mPortfolioChangeText.setOnClickListener(this);
+    }
 
-        String[] samplePortfolioList = new String[]{"Main Portfolio", "Pocket money", "Vacation project"};
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<String>(this, R.layout.spinner_drowdown_header, samplePortfolioList);
+    public void initChartFetcher() {
+        mFetcher = new MainPriceChartFetcher(mRealm, mLineChart);
+        mFetcher.startPriceChartRequestCycle();
+    }
+
+    public void initSpinner() {
+        ArrayList<Portfolio> portfolios =
+                (ArrayList<Portfolio>) mRealm.copyFromRealm(mRealm.where(Portfolio.class)
+                        .sort("_id", Sort.ASCENDING).findAll());
+        ArrayAdapter<Portfolio> spinnerAdapter =
+                new ArrayAdapter<>(this, R.layout.spinner_drowdown_header, portfolios);
         spinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         mToolbarSpinner.setAdapter(spinnerAdapter);
+        mToolbarSpinner.setSelection(findCurrentPortfolioPosition(portfolios, mCurrentPortfolioId));
+    }
 
+    public int findCurrentPortfolioPosition(ArrayList<Portfolio> data, int currentPortfolioId) {
+        for (int i = 0; i < data.size(); i++) {
+            if (data.get(i).get_id() == currentPortfolioId)
+                return i;
+        }
+        return 0;
+    }
 
+    public void initFragments() {
         mAdapter = new ViewPagerAdapter(getSupportFragmentManager());
         mAdapter.addFragment(ViewPagerAdapter.FRAG_POSITION_PORTFOLIO, new PortfolioFragment(), "Portfolio");
         mAdapter.addFragment(ViewPagerAdapter.FRAG_POSITION_WATCHLIST, new WatchlistFragment(), "Watchlist");
@@ -88,62 +155,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
 
             @Override
-            public void onTabUnselected(TabLayout.Tab tab) {}
+            public void onTabUnselected(TabLayout.Tab tab) {
+                Log.d(TAG, "onTabUnselected: ");
+            }
 
             @Override
-            public void onTabReselected(TabLayout.Tab tab) {}
+            public void onTabReselected(TabLayout.Tab tab) {
+                Log.d(TAG, "onTabReselected: ");
+            }
         });
         mTabLayout.setupWithViewPager(mViewPager);
-
-
-        mLineChart.setViewPortOffsets(0f, 80f, 0f, 0f);
-
-        mLineChart.setDrawGridBackground(false);
-        mLineChart.setTouchEnabled(false);
-        mLineChart.setContentDescription("");
-        mLineChart.getDescription().setEnabled(false);
-
-        mLineChart.getLegend().setEnabled(false);
-        mLineChart.getAxisLeft().setDrawLabels(false);
-        mLineChart.getAxisLeft().setDrawAxisLine(false);
-        mLineChart.getAxisLeft().setDrawGridLines(false);
-        mLineChart.getAxisLeft().setEnabled(false);
-
-        mLineChart.getAxisRight().setDrawLabels(false);
-        mLineChart.getAxisRight().setDrawAxisLine(false);
-        mLineChart.getAxisRight().setDrawGridLines(false);
-        mLineChart.getAxisRight().setEnabled(false);
-
-        mLineChart.getXAxis().setDrawLabels(false);
-        mLineChart.getXAxis().setDrawGridLines(false);
-        mLineChart.getXAxis().setDrawAxisLine(false);
-        mLineChart.getXAxis().setEnabled(false);
-
-        mLineChart.getXAxis().setDrawGridLines(false);
-        ArrayList<Entry> vals = new ArrayList<>();
-        int count = 10;
-        int range = 100;
-        for (int i = 0; i < count; i++) {
-            float val = (float) (Math.random() * range) + 3;
-            vals.add(new Entry(i, val));
-        }
-
-
-        LineDataSet set1 = new LineDataSet(vals, "Dataset 1");
-        set1.setDrawIcons(false);
-        set1.setDrawCircles(false);
-
-        set1.setDrawFilled(true);
-        set1.setColor(Color.parseColor("#78ffffff"));
-        set1.setFillColor(Color.parseColor("#B3E5FC"));
-        set1.setFillAlpha(20);
-        ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
-        dataSets.add(set1);
-        LineData data = new LineData(dataSets);
-        data.setDrawValues(false);
-        mLineChart.setData(data);
-
     }
+
 
     @Override
     public void onClick(View view) {
@@ -213,5 +236,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mFirstRun) {
+            mFirstRun = false;
+        } else {
+            mFetcher.refresh();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mFetcher.cancelPriceChartRequestCycle();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mRealm.close();
     }
 }
