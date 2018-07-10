@@ -46,6 +46,7 @@ public class PriceLineChart extends LineChart {
         getDescription().setTextColor(Color.WHITE);
         getDescription().setText("");
         setContentDescription("");
+        setNoDataText("");
         getLegend().setEnabled(false);
 
         getAxisLeft().setDrawLabels(false);

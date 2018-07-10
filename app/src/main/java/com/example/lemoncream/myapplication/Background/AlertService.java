@@ -1,6 +1,7 @@
 package com.example.lemoncream.myapplication.Background;
 
 
+import android.annotation.SuppressLint;
 import android.content.ContextWrapper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -58,6 +59,7 @@ public class AlertService extends JobService {
         return true;
     }
 
+    @SuppressLint("CheckResult")
     private void requestPrice(JobParameters jobParameters) {
         RealmResults<Alert> alerts = getAlerts();
         ArrayList<AlertResult> alertParams = createAlertParams(alerts);
