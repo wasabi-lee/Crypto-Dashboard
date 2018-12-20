@@ -1,4 +1,4 @@
-# PortfolioTracker
+# Crypto Dashbaord
 
 A cryptocurrency portpolio tracking app. 
 
