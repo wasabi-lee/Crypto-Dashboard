@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="com.example.lemoncream.myapplication.Activity.MainActivity">
+    tools:context="com.example.lemoncream.myapplication.activity.MainActivity">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/app_bar"
@@ -25,7 +25,7 @@
             app:toolbarId="@+id/toolbar"
             app:titleEnabled="false">
 
-            <com.example.lemoncream.myapplication.CustomViews.PriceLineChart
+            <com.example.lemoncream.myapplication.custom.PriceLineChart
             android:id="@+id/main_line_chart"
             android:layout_width="match_parent"
             android:layout_height="250dp"

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.lemoncream.myapplication.Fragment.ChartFragment">
+    tools:context="com.example.lemoncream.myapplication.fragment.ChartFragment">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -42,7 +42,7 @@
                 app:layout_constraintStart_toEndOf="@+id/chart_current_price_text"
                 app:layout_constraintTop_toTopOf="@+id/chart_current_price_text" />
 
-            <com.example.lemoncream.myapplication.CustomViews.CandleChart
+            <com.example.lemoncream.myapplication.custom.CandleChart
                 android:id="@+id/chart_candlestick_chart"
                 android:layout_width="match_parent"
                 android:layout_height="300dp"

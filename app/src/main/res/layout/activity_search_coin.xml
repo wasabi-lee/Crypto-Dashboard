@@ -4,13 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.lemoncream.myapplication.Activity.SearchCoinActivity">
+    tools:context="com.example.lemoncream.myapplication.activity.SearchCoinActivity">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/search_toolbar"
         android:layout_width="match_parent"
         android:layout_height="?android:attr/actionBarSize"
         android:background="@color/colorPrimary"
+        android:theme="@style/Base.ThemeOverlay.AppCompat.Dark.ActionBar"
         app:popupTheme="@style/AppTheme.PopupOverlay"
         app:titleTextColor="@android:color/white"/>
 
